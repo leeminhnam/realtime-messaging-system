@@ -1,8 +1,6 @@
 # BÀI TẬP LỚN: LẬP TRÌNH MẠNG  
 
-## [Tên dự án của nhóm]
-
-> 📘 *Mẫu README này là khung hướng dẫn. Sinh viên chỉ cần điền thông tin của nhóm và nội dung dự án theo từng mục.*
+## HỆ THỐNG NHẮN TIN THỜI GIAN THỰC
 
 ---
 
@@ -14,19 +12,20 @@
 | 2 | Trần Thị B | 20IT002 | b@example.com | ... |
 | 3 | Lê Văn C | 20IT003 | c@example.com | ... |
 
-**Tên nhóm:** Nhóm 01 – Lập trình mạng  
-**Chủ đề đã đăng ký:** (…)
+**Tên nhóm:** Nhóm 07 – Lập trình mạng  
+**Chủ đề đã đăng ký:** Hệ thống nhắn tin thời gian thực
 
 ---
 
 ## 🧠 MÔ TẢ HỆ THỐNG
 
-> Mô tả tổng quan hệ thống mà nhóm triển khai.
+Hệ thống nhắn tin thời gian thực (Real-time Messaging System) được xây dựng theo mô hình **Client - Server**, hỗ trợ người dùng giao tiếp, nhắn tin tức thời (chat 1-1 và chat nhóm), quản lý trạng thái trực tuyến và truyền tải file qua mạng.
 
-Ví dụ:
-> Hệ thống bao gồm **server** xử lý yêu cầu và **client** gửi yêu cầu đến server qua giao thức HTTP.  
-> Server cung cấp API cho phép tính toán đơn giản hoặc truyền dữ liệu.  
-> Client có thể là chương trình CLI, web hoặc ứng dụng desktop.
+Hệ thống bao gồm 4 module chức năng chính:
+- **Module 1: Quản lý tài khoản & Trạng thái người dùng (`account`)**: Đăng ký, đăng nhập, đăng xuất, quản lý hồ sơ cá nhân, xem danh sách người dùng và theo dõi trạng thái online/offline theo thời gian thực.
+- **Module 2: Trò chuyện riêng tư (`private-chat`)**: Gửi và nhận tin nhắn riêng (1-1) trong thời gian thực, quản lý danh sách hội thoại, xem lịch sử tin nhắn và trạng thái đã đọc.
+- **Module 3: Trò chuyện nhóm (`group-chat`)**: Tạo nhóm trò chuyện, thêm/xóa thành viên, phân quyền trưởng nhóm, nhắn tin nhóm trong thời gian thực và lưu trữ lịch sử tin nhắn nhóm.
+- **Module 4: Truyền tải file & Thông báo (`file-notification`)**: Upload/download file, gửi file trong chat riêng và chat nhóm, hiển thị trạng thái gửi/nhận file và gửi thông báo tin nhắn mới theo thời gian thực.
 
 **Cấu trúc logic tổng quát:**
 ```
@@ -98,7 +97,7 @@ cd source/client
 
 ## 🧩 CẤU TRÚC DỰ ÁN
 ```
-assignment-network-project/
+realtime-messaging-system/
 ├── README.md
 ├── INSTRUCTION.md
 ├── statics/
@@ -108,10 +107,16 @@ assignment-network-project/
     ├── .gitignore
     ├── client/
     │   ├── README.md
-    │   └── (client source files...)
+    │   ├── account/
+    │   ├── private-chat/
+    │   ├── group-chat/
+    │   └── file-notification/
     ├── server/
     │   ├── README.md
-    │   └── (server source files...)
+    │   ├── account/
+    │   ├── private-chat/
+    │   ├── group-chat/
+    │   └── file-notification/
     └── (các module khác nếu có)
 ```
 
