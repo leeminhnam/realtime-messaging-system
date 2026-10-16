@@ -1,11 +1,8 @@
 import javax.swing.*;
 import java.awt.*;
 
-/**
- * Điểm khởi chạy của Client - Hệ thống nhắn tin thời gian thực (Java Swing)
- */
+// Điểm khởi chạy của Client - Hệ thống nhắn tin thời gian thực (Java Swing)
 public class ClientMain {
-
     public static void main(String[] args) {
         // Thiết lập giao diện theo Look & Feel của hệ điều hành
         try {
@@ -20,9 +17,7 @@ public class ClientMain {
         });
     }
 
-    /**
-     * Hiển thị cửa sổ đăng nhập ban đầu
-     */
+    // Hiển thị cửa sổ đăng nhập ban đầu
     private static void showLoginWindow() {
         JFrame frame = new JFrame("Hệ thống nhắn tin thời gian thực - Đăng nhập");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

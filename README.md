@@ -8,11 +8,12 @@
 
 | STT | Họ và Tên | MSSV | Email | Đóng góp |
 |-----|-----------|------|-------|----------|
-| 1 | Nguyễn Văn A | 20IT001 | a@example.com | ... |
-| 2 | Trần Thị B | 20IT002 | b@example.com | ... |
-| 3 | Lê Văn C | 20IT003 | c@example.com | ... |
+| 1 | Phan Trung Đức | B23DCCN187 | a@example.com | ... |
+| 2 | Vũ Quang Huy | B23DCCN412 | vuquanghuy18042005@gmail.com | ... |
+| 3 | Lê Tuấn Minh | B23DCCN551 | tuanminh30042005@gmail.com | ... |
+| 4 | Lê Minh Nam | B23DCCN579 | leminhnam325@gmail.com | ... |
 
-**Tên nhóm:** Nhóm 07 – Lập trình mạng  
+**Tên nhóm:** Nhóm 07 – Lập trình mạng - INT1433-20261-09 
 **Chủ đề đã đăng ký:** Hệ thống nhắn tin thời gian thực
 
 ---

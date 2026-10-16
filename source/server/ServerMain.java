@@ -7,18 +7,14 @@ import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/**
- * Điểm khởi chạy của Server - Hệ thống nhắn tin thời gian thực
- */
+// Điểm khởi chạy của Server - Hệ thống nhắn tin thời gian thực
 public class ServerMain {
     public static final int PORT = 8888;
     // Sử dụng ThreadPool để quản lý đồng thời nhiều client kết nối
     private static final ExecutorService threadPool = Executors.newCachedThreadPool();
 
     public static void main(String[] args) {
-        System.out.println("==================================================");
         System.out.println("   HỆ THỐNG NHẮN TIN THỜI GIAN THỰC - SERVER      ");
-        System.out.println("==================================================");
 
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
             System.out.println("[SERVER] Đang lắng nghe tại cổng: " + PORT);
@@ -41,9 +37,7 @@ public class ServerMain {
         }
     }
 
-    /**
-     * Luồng xử lý giao tiếp riêng cho từng Client kết nối tới
-     */
+    // Luồng xử lý giao tiếp riêng cho từng Client kết nối tới
     static class ClientHandler implements Runnable {
         private final Socket socket;
 
