@@ -1,0 +1,42 @@
+# ==========================================
+# 1. Java Compiled & Build Outputs
+# ==========================================
+*.class
+*.jar
+*.war
+*.ear
+bin/
+out/
+build/
+target/
+
+# Giữ lại các file jar thư viện trong source/lib/
+!lib/*.jar
+
+# ==========================================
+# 2. SQLite Database Files (Server Data)
+# ==========================================
+server/data/*.db
+server/data/*.db-wal
+server/data/*.db-shm
+*.db
+*.db-wal
+*.db-shm
+
+# ==========================================
+# 3. IDE / Editor Configurations
+# ==========================================
+.vscode/
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+
+# ==========================================
+# 4. OS Temp & System Files
+# ==========================================
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log

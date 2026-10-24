@@ -1,0 +1,9 @@
+{
+    "java.project.sourcePaths": [
+        "source/client",
+        "source/server"
+    ],
+    "java.project.referencedLibraries": [
+        "source/lib/*.jar"
+    ]
+}
