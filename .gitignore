@@ -1,0 +1,9 @@
+# ==========================================
+# 3. IDE / Editor Configurations
+# ==========================================
+.vscode/
+.idea/
+*.iml
+.classpath
+.project
+.settings/
