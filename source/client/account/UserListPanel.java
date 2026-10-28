@@ -49,12 +49,26 @@ public class UserListPanel extends JPanel {
     }
 
     // Cập nhật trạng thái chấm Online/Offline thời gian thực
-    public void updateUserStatus(String username, String status) {
+    public void updateUserStatus(String username, String status, String fullName) {
         UserItem item = userMap.get(username.toLowerCase());
         if (item != null) {
             item.setStatus(status);
+            int index = listModel.indexOf(item);
+            if (index != -1) {
+                listModel.set(index, item);
+            }
             userJList.repaint();
+        } else if ("ONLINE".equalsIgnoreCase(status) && !username.equalsIgnoreCase(currentUsername)) {
+            // User mới đăng ký và vừa đăng nhập, tự động thêm mới vào danh bạ
+            String displayName = (fullName != null && !fullName.isEmpty()) ? fullName : username;
+            UserItem newItem = new UserItem(username, displayName, status);
+            userMap.put(username.toLowerCase(), newItem);
+            listModel.addElement(newItem);
         }
+    }
+
+    public void updateUserStatus(String username, String status) {
+        updateUserStatus(username, status, null);
     }
 
     // Model dữ liệu từng item

@@ -1,5 +1,6 @@
 import account.AccountHandler;
 import account.UserDAO;
+import database.DatabaseManager;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -7,9 +8,6 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.Statement;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -17,17 +15,16 @@ import java.util.concurrent.Executors;
 
 public class ServerMain {
     public static final int PORT = 8888;
-    private static final String DB_URL = "jdbc:sqlite:source/server/data/messaging_app.db";
     private static final ExecutorService threadPool = Executors.newCachedThreadPool();
 
-    // Map quản lý danh sách các Client đang Online (Key: username, Value: Luồng ghi
-    // PrintWriter)
+    // Map quản lý danh sách các Client đang Online (Key: username, Value: Luồng ghi PrintWriter)
     public static final Map<String, PrintWriter> onlineClients = new ConcurrentHashMap<>();
 
     public static void main(String[] args) {
         System.out.println("   HỆ THỐNG NHẮN TIN THỜI GIAN THỰC - SERVER      ");
 
-        initDatabase();
+        // Khởi tạo CSDL SQLite và reset trạng thái các user về OFFLINE
+        DatabaseManager.initDatabase();
 
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
             System.out.println("[SERVER] Đang lắng nghe tại cổng: " + PORT);
@@ -44,27 +41,6 @@ public class ServerMain {
             e.printStackTrace();
         } finally {
             threadPool.shutdown();
-        }
-    }
-
-    private static void initDatabase() {
-        String createTableSQL = "CREATE TABLE IF NOT EXISTS users ("
-                + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                + "username TEXT UNIQUE NOT NULL, "
-                + "password TEXT NOT NULL, "
-                + "full_name TEXT NOT NULL, "
-                + "avatar TEXT DEFAULT '', "
-                + "status TEXT DEFAULT 'OFFLINE', "
-                + "created_at DATETIME DEFAULT CURRENT_TIMESTAMP"
-                + ");";
-
-        try (Connection conn = DriverManager.getConnection(DB_URL);
-                Statement stmt = conn.createStatement()) {
-            stmt.execute("PRAGMA journal_mode=WAL;");
-            stmt.execute(createTableSQL);
-            System.out.println("[DATABASE] Kết nối và khởi tạo CSDL SQLite thành công!");
-        } catch (Exception e) {
-            System.err.println("[DATABASE] Lỗi khởi tạo CSDL: " + e.getMessage());
         }
     }
 
@@ -102,8 +78,13 @@ public class ServerMain {
                         this.authenticatedUsername = loggedInUser;
                         onlineClients.put(loggedInUser, writer);
 
+                        // Lấy thông tin user để broadcast kèm họ tên cho các client khác
+                        Map<String, String> userInfo = UserDAO.getUserByUsername(loggedInUser);
+                        String fullName = userInfo != null ? userInfo.get("fullName") : loggedInUser;
+                        String avatar = userInfo != null ? userInfo.get("avatar") : "";
+
                         // Broadcast thông báo cho các client khác biết user này vừa ONLINE
-                        String statusJson = AccountHandler.createStatusChangeJson(loggedInUser, "ONLINE");
+                        String statusJson = AccountHandler.createStatusChangeJson(loggedInUser, "ONLINE", fullName, avatar);
                         broadcast(statusJson, loggedInUser);
                     }
                 }

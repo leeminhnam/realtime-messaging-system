@@ -142,13 +142,23 @@ public class AccountHandler {
     }
 
     // Tạo chuỗi JSON phát thông báo đổi trạng thái Online/Offline
-    public static String createStatusChangeJson(String username, String status) {
+    public static String createStatusChangeJson(String username, String status, String fullName, String avatar) {
         JsonObject res = new JsonObject();
         res.addProperty("action", "USER_STATUS_CHANGE");
         JsonObject data = new JsonObject();
         data.addProperty("username", username);
         data.addProperty("status", status);
+        if (fullName != null) {
+            data.addProperty("fullName", fullName);
+        }
+        if (avatar != null) {
+            data.addProperty("avatar", avatar);
+        }
         res.add("data", data);
         return gson.toJson(res);
+    }
+
+    public static String createStatusChangeJson(String username, String status) {
+        return createStatusChangeJson(username, status, null, null);
     }
 }

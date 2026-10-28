@@ -124,9 +124,10 @@ public class MainFrame extends JFrame {
                         JsonObject data = msg.getAsJsonObject("data");
                         String username = data.get("username").getAsString();
                         String status = data.get("status").getAsString();
+                        String fullName = data.has("fullName") ? data.get("fullName").getAsString() : null;
 
                         SwingUtilities.invokeLater(() -> {
-                            userListPanel.updateUserStatus(username, status);
+                            userListPanel.updateUserStatus(username, status, fullName);
                         });
                     }
                     // Phản hồi khi sửa Hồ sơ thành công

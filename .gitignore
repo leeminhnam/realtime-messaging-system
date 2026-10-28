@@ -1,4 +1,22 @@
 # ==========================================
+# 1. Java Compiled & Build Outputs
+# ==========================================
+*.class
+bin/
+out/
+build/
+target/
+
+# ==========================================
+# 2. SQLite Database & Server Data
+# ==========================================
+*.db
+*.db-wal
+*.db-shm
+source/server/data/*
+!source/server/data/.gitkeep
+
+# ==========================================
 # 3. IDE / Editor Configurations
 # ==========================================
 .vscode/
@@ -7,3 +25,11 @@
 .classpath
 .project
 .settings/
+
+# ==========================================
+# 4. OS Temp & System Files
+# ==========================================
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log

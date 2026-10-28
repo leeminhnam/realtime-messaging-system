@@ -16,6 +16,8 @@ target/
 # ==========================================
 # 2. SQLite Database Files (Server Data)
 # ==========================================
+server/data/*
+!server/data/.gitkeep
 server/data/*.db
 server/data/*.db-wal
 server/data/*.db-shm
