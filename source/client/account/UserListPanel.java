@@ -29,6 +29,22 @@ public class UserListPanel extends JPanel {
         add(new JScrollPane(userJList), BorderLayout.CENTER);
     }
 
+    @FunctionalInterface
+    public interface UserSelectListener {
+        void onUserSelected(UserItem user);
+    }
+
+    public void setUserSelectListener(UserSelectListener listener) {
+        userJList.addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                UserItem selected = userJList.getSelectedValue();
+                if (selected != null && listener != null) {
+                    listener.onUserSelected(selected);
+                }
+            }
+        });
+    }
+
     public void loadUserList(JsonArray usersArray) {
         listModel.clear();
         userMap.clear();

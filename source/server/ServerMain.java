@@ -1,6 +1,9 @@
 import account.AccountHandler;
 import account.UserDAO;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import database.DatabaseManager;
+import private_chat.handler.PrivateChatHandler;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -70,22 +73,43 @@ public class ServerMain {
                 while ((message = reader.readLine()) != null) {
                     System.out.println("[NHẬN TỪ " + socket.getRemoteSocketAddress() + "]: " + message);
 
-                    // Cho AccountHandler xử lý gói tin
-                    String loggedInUser = AccountHandler.handleAccountAction(message, writer, authenticatedUsername);
+                    try {
+                        JsonObject req = JsonParser.parseString(message).getAsJsonObject();
+                        String action = req.has("action") ? req.get("action").getAsString() : "";
 
-                    // Nếu xử lý trả về username tức là vừa ĐĂNG NHẬP THÀNH CÔNG
-                    if (loggedInUser != null) {
-                        this.authenticatedUsername = loggedInUser;
-                        onlineClients.put(loggedInUser, writer);
+                        // 1. Phân luồng các gói tin liên quan tới Tài khoản (Account)
+                        if (AccountHandler.isAccountAction(action)) {
+                            String loggedInUser = AccountHandler.handleAccountAction(message, writer, authenticatedUsername);
 
-                        // Lấy thông tin user để broadcast kèm họ tên cho các client khác
-                        Map<String, String> userInfo = UserDAO.getUserByUsername(loggedInUser);
-                        String fullName = userInfo != null ? userInfo.get("fullName") : loggedInUser;
-                        String avatar = userInfo != null ? userInfo.get("avatar") : "";
+                            // Nếu xử lý trả về username tức là vừa ĐĂNG NHẬP THÀNH CÔNG
+                            if (loggedInUser != null) {
+                                this.authenticatedUsername = loggedInUser;
+                                onlineClients.put(loggedInUser, writer);
 
-                        // Broadcast thông báo cho các client khác biết user này vừa ONLINE
-                        String statusJson = AccountHandler.createStatusChangeJson(loggedInUser, "ONLINE", fullName, avatar);
-                        broadcast(statusJson, loggedInUser);
+                                // Lấy thông tin user để broadcast kèm họ tên cho các client khác
+                                Map<String, String> userInfo = UserDAO.getUserByUsername(loggedInUser);
+                                String fullName = userInfo != null ? userInfo.get("fullName") : loggedInUser;
+                                String avatar = userInfo != null ? userInfo.get("avatar") : "";
+
+                                // Broadcast thông báo cho các client khác biết user này vừa ONLINE
+                                String statusJson = AccountHandler.createStatusChangeJson(loggedInUser, "ONLINE", fullName, avatar);
+                                broadcast(statusJson, loggedInUser);
+                            }
+                        }
+                        // 2. Phân luồng các gói tin liên quan tới Chat riêng 1-1 (Private Chat)
+                        else if (PrivateChatHandler.isPrivateChatAction(action)) {
+                            PrivateChatHandler.handlePrivateChatAction(req, writer, authenticatedUsername, onlineClients);
+                        }
+                        // 3. Các hành động chưa hỗ trợ
+                        else {
+                            JsonObject err = new JsonObject();
+                            err.addProperty("action", "ERROR");
+                            err.addProperty("status", "FAILED");
+                            err.addProperty("message", "Hành động '" + action + "' không được hỗ trợ!");
+                            writer.println(err.toString());
+                        }
+                    } catch (Exception ex) {
+                        System.err.println("[SERVER] Lỗi xử lý gói tin JSON từ " + socket.getRemoteSocketAddress() + ": " + ex.getMessage());
                     }
                 }
             } catch (IOException e) {

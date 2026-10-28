@@ -12,6 +12,16 @@ public class AccountHandler {
     private static final Gson gson = new Gson();
 
     /**
+     * Kiểm tra xem một action có thuộc module Account hay không.
+     */
+    public static boolean isAccountAction(String action) {
+        return "REGISTER".equalsIgnoreCase(action)
+                || "LOGIN".equalsIgnoreCase(action)
+                || "UPDATE_PROFILE".equalsIgnoreCase(action)
+                || "GET_USER_LIST".equalsIgnoreCase(action);
+    }
+
+    /**
      * Xử lý chính cho tất cả các hành động liên quan tới Module Account
      * 
      * @param jsonReq         Chuỗi JSON yêu cầu từ Client

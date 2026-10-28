@@ -3,6 +3,9 @@ import account.UserListPanel;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import private_chat.controller.PrivateChatController;
+import private_chat.model.ChatPartner;
+import private_chat.view.PrivateChatPanel;
 
 import javax.swing.*;
 import java.awt.*;
@@ -18,6 +21,8 @@ public class MainFrame extends JFrame {
 
     private JLabel lblUserInfo;
     private UserListPanel userListPanel;
+    private PrivateChatPanel privateChatPanel;
+    private PrivateChatController privateChatController;
 
     public MainFrame(Socket socket, BufferedReader reader, PrintWriter writer, JsonObject currentUser) {
         this.socket = socket;
@@ -26,7 +31,7 @@ public class MainFrame extends JFrame {
         this.currentUser = currentUser;
 
         updateWindowTitle();
-        setSize(850, 600);
+        setSize(950, 650);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -84,7 +89,7 @@ public class MainFrame extends JFrame {
         mainPanel.add(headerPanel, BorderLayout.NORTH);
 
         // Sidebar bên trái
-        userListPanel = new UserListPanel(currentUser.get("username").getAsString());
+        userListPanel = new UserListPanel(username);
         if (currentUser.has("allUsers")) {
             JsonArray usersArray = currentUser.getAsJsonArray("allUsers");
             userListPanel.loadUserList(usersArray);
@@ -93,13 +98,16 @@ public class MainFrame extends JFrame {
         userListPanel.setPreferredSize(new Dimension(280, 0));
         mainPanel.add(userListPanel, BorderLayout.WEST);
 
-        // Khung chat trống
-        JPanel chatArea = new JPanel(new GridBagLayout());
-        JLabel lblPlaceholder = new JLabel("Chọn một người dùng ở danh sách bên trái để bắt đầu chat");
-        lblPlaceholder.setForeground(Color.GRAY);
-        chatArea.add(lblPlaceholder);
+        // Khung Private Chat ở vùng trung tâm
+        privateChatPanel = new PrivateChatPanel();
+        privateChatController = new PrivateChatController(privateChatPanel, writer, username);
+        mainPanel.add(privateChatPanel, BorderLayout.CENTER);
 
-        mainPanel.add(chatArea, BorderLayout.CENTER);
+        // Lắng nghe sự kiện click chọn một người dùng từ danh bạ bên trái
+        userListPanel.setUserSelectListener(userItem -> {
+            ChatPartner partner = new ChatPartner(userItem.getUsername(), userItem.getFullName(), userItem.getStatus());
+            privateChatController.openChatWith(partner);
+        });
 
         setContentPane(mainPanel);
     }
@@ -119,18 +127,46 @@ public class MainFrame extends JFrame {
                     JsonObject msg = JsonParser.parseString(line).getAsJsonObject();
                     String action = msg.has("action") ? msg.get("action").getAsString() : "";
 
-                    // Cập nhật trạng thái Online/Offline
+                    // 1. Cập nhật trạng thái Online/Offline
                     if ("USER_STATUS_CHANGE".equalsIgnoreCase(action)) {
                         JsonObject data = msg.getAsJsonObject("data");
-                        String username = data.get("username").getAsString();
+                        String user = data.get("username").getAsString();
                         String status = data.get("status").getAsString();
-                        String fullName = data.has("fullName") ? data.get("fullName").getAsString() : null;
+                        String userFullName = data.has("fullName") ? data.get("fullName").getAsString() : null;
 
                         SwingUtilities.invokeLater(() -> {
-                            userListPanel.updateUserStatus(username, status, fullName);
+                            userListPanel.updateUserStatus(user, status, userFullName);
+                            privateChatController.onPartnerStatusChanged(user, status);
                         });
                     }
-                    // Phản hồi khi sửa Hồ sơ thành công
+                    // 2. Nhận tin nhắn chat riêng thời gian thực
+                    else if ("RECEIVE_PRIVATE_MESSAGE".equalsIgnoreCase(action)) {
+                        if (msg.has("data")) {
+                            JsonObject data = msg.getAsJsonObject("data");
+                            privateChatController.onMessageReceived(data);
+                        }
+                    }
+                    // 3. Phản hồi khi gửi tin nhắn thành công
+                    else if ("SEND_PRIVATE_MESSAGE_RESPONSE".equalsIgnoreCase(action)) {
+                        String status = msg.has("status") ? msg.get("status").getAsString() : "";
+                        if ("SUCCESS".equalsIgnoreCase(status) && msg.has("data")) {
+                            JsonObject data = msg.getAsJsonObject("data");
+                            privateChatController.onSendMessageSuccess(data);
+                        } else {
+                            String message = msg.has("message") ? msg.get("message").getAsString() : "Lỗi gửi tin nhắn";
+                            SwingUtilities.invokeLater(() -> {
+                                JOptionPane.showMessageDialog(this, message, "Lỗi", JOptionPane.ERROR_MESSAGE);
+                            });
+                        }
+                    }
+                    // 4. Nhận lịch sử tin nhắn cuộc trò chuyện
+                    else if ("GET_CHAT_HISTORY_RESPONSE".equalsIgnoreCase(action)) {
+                        if (msg.has("data")) {
+                            JsonObject data = msg.getAsJsonObject("data");
+                            privateChatController.onChatHistoryReceived(data);
+                        }
+                    }
+                    // 5. Phản hồi khi sửa Hồ sơ thành công
                     else if ("UPDATE_PROFILE_RESPONSE".equalsIgnoreCase(action)) {
                         String status = msg.get("status").getAsString();
                         String message = msg.get("message").getAsString();
