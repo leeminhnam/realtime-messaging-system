@@ -56,20 +56,18 @@ client  <-->  server  <-->  (database / service nếu có)
 
 ### 1. Clone repository
 ```bash
-git clone <repository-url>
-cd assignment-network-project
+git clone https://github.com/leeminhnam/realtime-messaging-system.git
+cd realtime-messaging-system
 ```
 
 ### 2. Chạy server
 ```bash
-cd source/server
-# Các lệnh để khởi động server
+java -cp "out/production/realtime-messaging-system;source/lib/*" ServerMain
 ```
 
 ### 3. Chạy client
 ```bash
-cd source/client
-# Các lệnh để khởi động client
+java -cp "out/production/realtime-messaging-system;source/lib/*" ClientMain
 ```
 
 ### 4. Kiểm thử nhanh

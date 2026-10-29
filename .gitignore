@@ -2,10 +2,18 @@
 # 1. Java Compiled & Build Outputs
 # ==========================================
 *.class
+*.war
+*.ear
 bin/
 out/
 build/
 target/
+dist/
+
+# Ignore compiled jar files but keep libraries in source/lib/
+*.jar
+!source/lib/*.jar
+!lib/*.jar
 
 # ==========================================
 # 2. SQLite Database & Server Data
@@ -13,23 +21,83 @@ target/
 *.db
 *.db-wal
 *.db-shm
+*.db-journal
+*.sqlite
+*.sqlite3
 source/server/data/*
 !source/server/data/.gitkeep
+server/data/*
+!server/data/.gitkeep
+data/*
+!data/.gitkeep
 
 # ==========================================
-# 3. IDE / Editor Configurations
+# 3. File Transfers, Uploads & Downloads
 # ==========================================
-.vscode/
+uploads/
+downloads/
+temp/
+tmp/
+*.tmp
+source/server/uploads/*
+!source/server/uploads/.gitkeep
+source/client/downloads/*
+!source/client/downloads/.gitkeep
+
+# ==========================================
+# 4. IDE / Editor Configurations
+# ==========================================
+# VS Code (giữ lại file cấu hình settings.json của dự án)
+.vscode/*
+!.vscode/settings.json
+*.code-workspace
+.history/
+
+# IntelliJ IDEA
 .idea/
 *.iml
+*.iws
+*.ipr
+
+# Eclipse
 .classpath
 .project
 .settings/
+.metadata/
+
+# NetBeans
+nbproject/private/
+nbbuild/
+nbdist/
 
 # ==========================================
-# 4. OS Temp & System Files
+# 5. OS & System Files
 # ==========================================
+# macOS
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
 Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
 desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+
+# ==========================================
+# 6. Logs & Crash Dumps
+# ==========================================
 *.log
+logs/
+hs_err_pid*
+replay_pid*
+*.hprof

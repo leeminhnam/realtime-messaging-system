@@ -9,6 +9,7 @@ bin/
 out/
 build/
 target/
+dist/
 
 # Giữ lại các file jar thư viện trong source/lib/
 !lib/*.jar
@@ -16,29 +17,74 @@ target/
 # ==========================================
 # 2. SQLite Database Files (Server Data)
 # ==========================================
-server/data/*
-!server/data/.gitkeep
-server/data/*.db
-server/data/*.db-wal
-server/data/*.db-shm
 *.db
 *.db-wal
 *.db-shm
+*.db-journal
+*.sqlite
+*.sqlite3
+server/data/*
+!server/data/.gitkeep
+data/*
+!data/.gitkeep
 
 # ==========================================
-# 3. IDE / Editor Configurations
+# 3. File Transfers & Uploads / Downloads
 # ==========================================
-.vscode/
+uploads/
+downloads/
+temp/
+tmp/
+*.tmp
+server/uploads/*
+!server/uploads/.gitkeep
+client/downloads/*
+!client/downloads/.gitkeep
+
+# ==========================================
+# 4. IDE / Editor Configurations
+# ==========================================
+.vscode/*
+!.vscode/settings.json
+*.code-workspace
 .idea/
 *.iml
+*.iws
+*.ipr
 .classpath
 .project
 .settings/
+.metadata/
+nbproject/private/
+nbbuild/
+nbdist/
 
 # ==========================================
-# 4. OS Temp & System Files
+# 5. OS Temp, Crash Dumps & System Files
 # ==========================================
+# macOS
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
 Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
 desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+
+# Logs & Dumps
 *.log
+logs/
+hs_err_pid*
+replay_pid*
+*.hprof
