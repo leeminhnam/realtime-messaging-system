@@ -3,6 +3,7 @@ import account.UserDAO;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import database.DatabaseManager;
+import file_notification.handler.FileNotificationHandler;
 import private_chat.handler.PrivateChatHandler;
 
 import java.io.BufferedReader;
@@ -24,7 +25,9 @@ public class ServerMain {
     public static final Map<String, PrintWriter> onlineClients = new ConcurrentHashMap<>();
 
     public static void main(String[] args) {
+        System.out.println("==================================================");
         System.out.println("   HỆ THỐNG NHẮN TIN THỜI GIAN THỰC - SERVER      ");
+        System.out.println("==================================================");
 
         // Khởi tạo CSDL SQLite và reset trạng thái các user về OFFLINE
         DatabaseManager.initDatabase();
@@ -71,7 +74,9 @@ public class ServerMain {
                     PrintWriter writer = new PrintWriter(socket.getOutputStream(), true)) {
                 String message;
                 while ((message = reader.readLine()) != null) {
-                    System.out.println("[NHẬN TỪ " + socket.getRemoteSocketAddress() + "]: " + message);
+                    // Cắt bớt log nếu message quá dài (tránh spam console khi truyền base64)
+                    String logMsg = message.length() > 200 ? message.substring(0, 200) + "... (độ dài: " + message.length() + ")" : message;
+                    System.out.println("[NHẬN TỪ " + socket.getRemoteSocketAddress() + "]: " + logMsg);
 
                     try {
                         JsonObject req = JsonParser.parseString(message).getAsJsonObject();
@@ -100,7 +105,11 @@ public class ServerMain {
                         else if (PrivateChatHandler.isPrivateChatAction(action)) {
                             PrivateChatHandler.handlePrivateChatAction(req, writer, authenticatedUsername, onlineClients);
                         }
-                        // 3. Các hành động chưa hỗ trợ
+                        // 3. Phân luồng các gói tin liên quan tới Module 4: Truyền tải file & Thông báo (File & Notification)
+                        else if (FileNotificationHandler.isFileNotificationAction(action)) {
+                            FileNotificationHandler.handleFileNotificationAction(req, writer, authenticatedUsername, onlineClients);
+                        }
+                        // 4. Các hành động chưa hỗ trợ
                         else {
                             JsonObject err = new JsonObject();
                             err.addProperty("action", "ERROR");

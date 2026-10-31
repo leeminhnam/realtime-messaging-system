@@ -1,5 +1,6 @@
 package private_chat.handler;
 
+import account.UserDAO;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import private_chat.dao.ConversationDAO;
@@ -67,6 +68,7 @@ public class PrivateChatHandler {
      * - Lưu tin nhắn vào CSDL SQLite.
      * - Trả phản hồi thành công về cho người gửi.
      * - Nếu người nhận đang Online, chuyển tiếp tin nhắn thời gian thực (Realtime) qua Socket của họ.
+     * - Gửi thông báo nổi thời gian thực (Notification) đến người nhận.
      */
     private static void handleSendMessage(JsonObject data, PrintWriter senderWriter, String senderUsername,
             Map<String, PrintWriter> onlineClients) {
@@ -121,13 +123,30 @@ public class PrivateChatHandler {
         // 4. Nếu người nhận đang Online, chuyển tiếp tin nhắn ngay lập tức (Realtime)
         PrintWriter receiverWriter = onlineClients.get(receiverUsername);
         if (receiverWriter != null) {
+            // Gửi tin nhắn đến khung chat
             JsonObject receivePacket = new JsonObject();
             receivePacket.addProperty("action", "RECEIVE_PRIVATE_MESSAGE");
             receivePacket.addProperty("status", "SUCCESS");
             receivePacket.add("data", msgData);
-
             receiverWriter.println(gson.toJson(receivePacket));
-            System.out.println("[REALTIME CHAT] Đã chuyển tiếp tin nhắn từ @" + senderUsername + " tới @" + receiverUsername);
+
+            // Gửi thông báo tin nhắn mới thời gian thực (Module 4)
+            Map<String, String> senderInfo = UserDAO.getUserByUsername(senderUsername);
+            String senderFullName = senderInfo != null ? senderInfo.get("fullName") : senderUsername;
+
+            JsonObject notifPacket = new JsonObject();
+            notifPacket.addProperty("action", "RECEIVE_NOTIFICATION");
+            notifPacket.addProperty("status", "SUCCESS");
+            JsonObject notifData = new JsonObject();
+            notifData.addProperty("type", "TEXT");
+            notifData.addProperty("sender", senderUsername);
+            notifData.addProperty("senderFullName", senderFullName);
+            String shortContent = content.length() > 40 ? content.substring(0, 40) + "..." : content;
+            notifData.addProperty("message", senderFullName + ": " + shortContent);
+            notifPacket.add("data", notifData);
+            receiverWriter.println(gson.toJson(notifPacket));
+
+            System.out.println("[REALTIME CHAT] Đã chuyển tiếp tin nhắn và thông báo từ @" + senderUsername + " tới @" + receiverUsername);
         } else {
             System.out.println("[OFFLINE CHAT] Người nhận @" + receiverUsername + " đang offline. Đã lưu tin nhắn vào CSDL.");
         }
