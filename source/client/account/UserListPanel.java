@@ -87,6 +87,17 @@ public class UserListPanel extends JPanel {
         updateUserStatus(username, status, null);
     }
 
+    /**
+     * Chọn nhanh một người dùng trong danh bạ theo username (dùng khi click thông báo toast).
+     */
+    public void selectUser(String username) {
+        if (username == null) return;
+        UserItem item = userMap.get(username.toLowerCase());
+        if (item != null) {
+            userJList.setSelectedValue(item, true);
+        }
+    }
+
     // Model dữ liệu từng item
     public static class UserItem {
         private final String username;

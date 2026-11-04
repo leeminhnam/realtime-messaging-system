@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import file_notification.controller.FileClientManager;
 import private_chat.model.ChatMessage;
 import private_chat.model.ChatPartner;
 import private_chat.view.PrivateChatPanel;
@@ -25,13 +26,32 @@ public class PrivateChatController {
         this.writer = writer;
         this.currentUsername = currentUsername;
 
+        FileClientManager.getInstance().setWriter(writer);
+
         initEventHandlers();
     }
 
     private void initEventHandlers() {
-        // Lắng nghe sự kiện người dùng bấm Gửi hoặc gõ Enter
+        // 1. Lắng nghe sự kiện người dùng gửi tin nhắn chữ
         view.getInputPanel().setSendMessageListener(content -> {
             sendPrivateMessage(content);
+        });
+
+        // 2. Lắng nghe sự kiện người dùng chọn gửi tệp (ảnh, video, tài liệu) - Module 4
+        view.getInputPanel().setSendFileListener((file, fileType) -> {
+            String receiver = view.getCurrentPartnerUsername();
+            if (receiver != null && !receiver.trim().isEmpty()) {
+                FileClientManager.getInstance().sendFile(writer, receiver, file, fileType, 0, "");
+            }
+        });
+
+        // 3. Lắng nghe sự kiện người dùng gửi đoạn ghi âm - Module 4
+        view.getInputPanel().setSendVoiceListener((wavBytes, durationSeconds) -> {
+            String receiver = view.getCurrentPartnerUsername();
+            if (receiver != null && !receiver.trim().isEmpty()) {
+                String fileName = "voice_" + System.currentTimeMillis() + ".wav";
+                FileClientManager.getInstance().sendBytes(writer, receiver, wavBytes, fileName, "AUDIO", durationSeconds, "");
+            }
         });
     }
 
@@ -108,8 +128,8 @@ public class PrivateChatController {
     }
 
     /**
-     * Xử lý phản hồi khi gửi tin nhắn thành công (SEND_PRIVATE_MESSAGE_RESPONSE).
-     * Hiển thị tin nhắn vừa gửi lên bong bóng bên phải.
+     * Xử lý phản hồi khi gửi tin nhắn hoặc gửi tệp thành công (SEND_PRIVATE_MESSAGE_RESPONSE / SEND_FILE_RESPONSE).
+     * Hiển thị tin nhắn/media vừa gửi lên bong bóng bên phải.
      */
     public void onSendMessageSuccess(JsonObject msgData) {
         if (msgData == null) return;

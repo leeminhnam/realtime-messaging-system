@@ -27,6 +27,7 @@ public class DatabaseManager {
      * - users: Lưu tài khoản người dùng
      * - conversations: Lưu thông tin đoạn chat (gồm 2 người tham gia)
      * - messages: Lưu tất cả tin nhắn thuộc về từng đoạn chat
+     * - file_attachments: Lưu thông tin tệp, ảnh, video, voice note đính kèm (Module 4)
      */
     public static void initDatabase() {
         // 1. Bảng người dùng
@@ -61,12 +62,30 @@ public class DatabaseManager {
                 + "FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE"
                 + ");";
 
-        // 4. Các Index để tối ưu tốc độ truy vấn
+        // 4. Bảng tệp đính kèm (File Attachment) - Module 4: Truyền tải file & Thông báo
+        String createFileAttachmentsTable = "CREATE TABLE IF NOT EXISTS file_attachments ("
+                + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                + "conversation_id INTEGER NOT NULL, "
+                + "message_id INTEGER, "
+                + "sender_username TEXT NOT NULL COLLATE NOCASE, "
+                + "receiver_username TEXT NOT NULL COLLATE NOCASE, "
+                + "file_name TEXT NOT NULL, "
+                + "file_type TEXT NOT NULL, " // 'IMAGE', 'AUDIO', 'VIDEO', 'FILE'
+                + "file_size INTEGER NOT NULL, "
+                + "stored_path TEXT NOT NULL, "
+                + "created_at DATETIME DEFAULT CURRENT_TIMESTAMP, "
+                + "FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE"
+                + ");";
+
+        // 5. Các Index để tối ưu tốc độ truy vấn
         String createConvIndex = "CREATE INDEX IF NOT EXISTS idx_conv_users "
                 + "ON conversations(user1_username, user2_username);";
 
         String createMessagesIndex = "CREATE INDEX IF NOT EXISTS idx_messages_conv_time "
                 + "ON messages(conversation_id, sent_at);";
+
+        String createFileIndex = "CREATE INDEX IF NOT EXISTS idx_files_conv "
+                + "ON file_attachments(conversation_id, created_at);";
 
         try (Connection conn = getConnection();
                 Statement stmt = conn.createStatement()) {
@@ -78,15 +97,23 @@ public class DatabaseManager {
             stmt.execute(createUsersTable);
             stmt.execute(createConversationsTable);
             stmt.execute(createMessagesTable);
+            stmt.execute(createFileAttachmentsTable);
 
             // Tạo các chỉ mục tìm kiếm
             stmt.execute(createConvIndex);
             stmt.execute(createMessagesIndex);
+            stmt.execute(createFileIndex);
+
+            // Đảm bảo thư mục lưu file upload tồn tại
+            File uploadDir = new File(DB_DIR + "/uploads");
+            if (!uploadDir.exists()) {
+                uploadDir.mkdirs();
+            }
 
             // Reset tất cả tài khoản về OFFLINE khi server khởi động lại
             stmt.executeUpdate("UPDATE users SET status = 'OFFLINE';");
 
-            System.out.println("[DATABASE] Kết nối và khởi tạo CSDL SQLite thành công (users, conversations, messages)!");
+            System.out.println("[DATABASE] Kết nối và khởi tạo CSDL SQLite thành công (users, conversations, messages, file_attachments)!");
         } catch (SQLException e) {
             System.err.println("[DATABASE] Lỗi khởi tạo CSDL: " + e.getMessage());
             e.printStackTrace();

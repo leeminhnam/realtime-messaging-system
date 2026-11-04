@@ -3,6 +3,8 @@ import account.UserListPanel;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import file_notification.controller.FileClientManager;
+import file_notification.notification.NotificationToast;
 import private_chat.controller.PrivateChatController;
 import private_chat.model.ChatPartner;
 import private_chat.view.PrivateChatPanel;
@@ -30,8 +32,11 @@ public class MainFrame extends JFrame {
         this.writer = writer;
         this.currentUser = currentUser;
 
+        // Khởi tạo FileClientManager với luồng ghi mạng
+        FileClientManager.getInstance().setWriter(writer);
+
         updateWindowTitle();
-        setSize(950, 650);
+        setSize(980, 680);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -139,14 +144,14 @@ public class MainFrame extends JFrame {
                             privateChatController.onPartnerStatusChanged(user, status);
                         });
                     }
-                    // 2. Nhận tin nhắn chat riêng thời gian thực
+                    // 2. Nhận tin nhắn chat riêng / media thời gian thực
                     else if ("RECEIVE_PRIVATE_MESSAGE".equalsIgnoreCase(action)) {
                         if (msg.has("data")) {
                             JsonObject data = msg.getAsJsonObject("data");
                             privateChatController.onMessageReceived(data);
                         }
                     }
-                    // 3. Phản hồi khi gửi tin nhắn thành công
+                    // 3. Phản hồi khi gửi tin nhắn chữ thành công
                     else if ("SEND_PRIVATE_MESSAGE_RESPONSE".equalsIgnoreCase(action)) {
                         String status = msg.has("status") ? msg.get("status").getAsString() : "";
                         if ("SUCCESS".equalsIgnoreCase(status) && msg.has("data")) {
@@ -159,14 +164,52 @@ public class MainFrame extends JFrame {
                             });
                         }
                     }
-                    // 4. Nhận lịch sử tin nhắn cuộc trò chuyện
+                    // 4. Phản hồi khi gửi tệp thành công (Module 4)
+                    else if ("SEND_FILE_RESPONSE".equalsIgnoreCase(action)) {
+                        String status = msg.has("status") ? msg.get("status").getAsString() : "";
+                        if ("SUCCESS".equalsIgnoreCase(status) && msg.has("data")) {
+                            JsonObject data = msg.getAsJsonObject("data");
+                            privateChatController.onSendMessageSuccess(data);
+                        } else {
+                            String message = msg.has("message") ? msg.get("message").getAsString() : "Lỗi gửi tệp";
+                            SwingUtilities.invokeLater(() -> {
+                                JOptionPane.showMessageDialog(this, message, "Lỗi", JOptionPane.ERROR_MESSAGE);
+                            });
+                        }
+                    }
+                    // 5. Phản hồi khi tải dữ liệu tệp (Module 4)
+                    else if ("DOWNLOAD_FILE_RESPONSE".equalsIgnoreCase(action)) {
+                        String status = msg.has("status") ? msg.get("status").getAsString() : "";
+                        if ("SUCCESS".equalsIgnoreCase(status) && msg.has("data")) {
+                            JsonObject data = msg.getAsJsonObject("data");
+                            FileClientManager.getInstance().onDownloadResponse(data);
+                        }
+                    }
+                    // 6. Nhận thông báo nổi thời gian thực (Module 4: Toast Notification + Sound)
+                    else if ("RECEIVE_NOTIFICATION".equalsIgnoreCase(action)) {
+                        if (msg.has("data")) {
+                            JsonObject data = msg.getAsJsonObject("data");
+                            String notifType = data.has("fileType") ? data.get("fileType").getAsString() : (data.has("type") ? data.get("type").getAsString() : "TEXT");
+                            String senderUser = data.get("sender").getAsString();
+                            String senderFullName = data.has("senderFullName") ? data.get("senderFullName").getAsString() : senderUser;
+                            String notifMessage = data.get("message").getAsString();
+
+                            SwingUtilities.invokeLater(() -> {
+                                NotificationToast.showNotification(this, notifType, senderUser, senderFullName, notifMessage, targetSender -> {
+                                    // Khi nhấn vào thông báo: tự động chọn hội thoại đó
+                                    userListPanel.selectUser(targetSender);
+                                });
+                            });
+                        }
+                    }
+                    // 7. Nhận lịch sử tin nhắn cuộc trò chuyện
                     else if ("GET_CHAT_HISTORY_RESPONSE".equalsIgnoreCase(action)) {
                         if (msg.has("data")) {
                             JsonObject data = msg.getAsJsonObject("data");
                             privateChatController.onChatHistoryReceived(data);
                         }
                     }
-                    // 5. Phản hồi khi sửa Hồ sơ thành công
+                    // 8. Phản hồi khi sửa Hồ sơ thành công
                     else if ("UPDATE_PROFILE_RESPONSE".equalsIgnoreCase(action)) {
                         String status = msg.get("status").getAsString();
                         String message = msg.get("message").getAsString();
