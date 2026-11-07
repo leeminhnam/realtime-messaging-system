@@ -97,6 +97,11 @@ java -Dfile.encoding=UTF-8 -cp "out_test;source/lib/*" group_chat.GroupChatModul
 java -Dfile.encoding=UTF-8 -cp "out_test;source/lib/*" file_notification.FileNotificationModuleTest
 ```
 
+Kiểm thử mạng (khởi động Server thật và nhiều Client socket: kết nối đồng thời, trao đổi hai chiều, truyền tệp 1 KB đến 20 MB, lỗi và gián đoạn). Cần tắt Server đang chạy vì dùng cổng 8888, thời gian chạy khoảng 1 đến 2 phút:
+```bash
+java -Dfile.encoding=UTF-8 -cp "out_test;source/lib/*" NetworkTest
+```
+
 Kết quả mong đợi khi chạy `AllTests`: `Kết quả: 154 đạt, 0 lỗi` (thoát với mã 1 nếu có ca lỗi). Mỗi ca in `[PASS]` hoặc `[FAIL]` kèm mô tả. Phạm vi kiểm thử:
 
 | Module | File test | Nội dung kiểm tra |
