@@ -7,7 +7,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 public class DatabaseManager {
-    private static final String DB_DIR = "source/server/data";
+    // Có thể ghi đè bằng -Dchatnest.db.dir=... (dùng cho test để không đụng tới CSDL thật)
+    private static final String DB_DIR = System.getProperty("chatnest.db.dir", "source/server/data");
     private static final String DB_URL = "jdbc:sqlite:" + DB_DIR + "/messaging_app.db";
 
     /**

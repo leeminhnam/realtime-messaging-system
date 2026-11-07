@@ -21,7 +21,8 @@ import java.util.UUID;
 
 public class FileNotificationHandler {
     private static final Gson gson = new Gson();
-    private static final String UPLOAD_DIR = "source/server/data/uploads";
+    // Cùng thư mục dữ liệu với DatabaseManager (có thể ghi đè bằng -Dchatnest.db.dir khi chạy test)
+    private static final String UPLOAD_DIR = System.getProperty("chatnest.db.dir", "source/server/data") + "/uploads";
 
     /**
      * Kiểm tra xem action có thuộc Module File & Notification không.
