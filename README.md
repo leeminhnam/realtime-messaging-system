@@ -8,9 +8,9 @@
 
 | STT | Họ và Tên | MSSV | Email | Đóng góp |
 |:---:|:---|:---:|:---|:---:|
-| 1 | Phan Trung Đức | B23DCCN187 | Phanduc715@gmail.com | Module 1 & 2 |
-| 2 | Vũ Quang Huy | B23DCCN412 | vuquanghuy18042005@gmail.com | Module 1 & 2 |
-| 3 | Lê Tuấn Minh | B23DCCN551 | tuanminh30042005@gmail.com | Module 4 (File & Notification) |
+| 1 | Phan Trung Đức | B23DCCN187 | Phanduc715@gmail.com | Module 2 (Private chat) |
+| 2 | Vũ Quang Huy | B23DCCN412 | vuquanghuy18042005@gmail.com | Module 1 (account)|
+| 3 | Lê Tuấn Minh | B23DCCN551 | tuanminh30042005@gmail.com | Module 4 (File) |
 | 4 | Lê Minh Nam | B23DCCN579 | leminhnam325@gmail.com | Module 3 (Group Chat) |
 
 **Tên nhóm:** Nhóm 07 – Lập trình mạng - INT1433-20261-09  
@@ -23,16 +23,15 @@
 **ChatNest** được xây dựng theo mô hình **Client - Server**, hỗ trợ người dùng giao tiếp, nhắn tin tức thời (chat 1-1 và chat nhóm), quản lý trạng thái trực tuyến và truyền tải file qua mạng.
 
 Hệ thống bao gồm 4 module chức năng chính:
-- **Module 1: Quản lý tài khoản & Trạng thái người dùng (`account`)**: Đăng ký, đăng nhập, đăng xuất, quản lý hồ sơ cá nhân, xem danh sách người dùng và theo dõi trạng thái online/offline theo thời gian thực.
+- **Module 1: Quản lý tài khoản & Trạng thái người dùng (`account`)**: Đăng ký, đăng nhập, đăng xuất, quản lý hồ sơ cá nhân, xem danh sách người dùng và theo dõi trạng thái online/offline, thông báo tin nhắn theo thời gian thực.
 - **Module 2: Trò chuyện riêng tư (`private-chat`)**: Gửi và nhận tin nhắn riêng (1-1) trong thời gian thực, quản lý danh sách hội thoại, xem lịch sử tin nhắn và trạng thái đã đọc.
 - **Module 3: Trò chuyện nhóm (`group-chat`)**: Tạo nhóm trò chuyện, thêm/xóa thành viên, phân quyền trưởng nhóm, nhắn tin nhóm trong thời gian thực và lưu trữ lịch sử tin nhắn nhóm.
-- **Module 4: Truyền tải file & Thông báo (`file-notification`)**: *(Đã hoàn thành)*
+- **Module 4: Truyền tải file & Thông báo (`file-notification`)**:
   - Hỗ trợ **Hình ảnh (`IMAGE`)**: Xem trước thumbnail ngay trên bong bóng chat, phóng to/thu nhỏ (Zoom Viewer), lưu ảnh về máy.
   - Hỗ trợ **Đoạn ghi âm (`AUDIO / VOICE NOTE`)**: Thu âm trực tiếp bằng microphone qua Java Sound API, phát lại âm thanh trực tiếp trong ứng dụng.
   - Hỗ trợ **Video (`VIDEO`)**: Xem video tự động bằng trình phát mặc định của hệ điều hành.
   - Hỗ trợ **Tệp tin tài liệu (`FILE`)**: Tải về các định dạng file đính kèm.
   - **Hệ thống thông báo thời gian thực (`Notification Toast + Chime Sound`)**: Hiển thị popup góc màn hình kèm tiếng chuông du dương khi có tin/file mới, click để chuyển ngay tới đoạn chat.
-  - 📖 *Xem tài liệu chi tiết tại:* [MODULE4_DOCUMENTATION.md](./MODULE4_DOCUMENTATION.md)
 
 **Cấu trúc logic tổng quát:**
 ```
@@ -57,16 +56,110 @@ Client (Swing UI) <---> Server Socket (TCP/IP) <---> SQLite Database (messaging_
 
 ## 🚀 HƯỚNG DẪN CHẠY DỰ ÁN
 
-### 1. Khởi động Server (bằng PowerShell)
-Tại thư mục gốc dự án:
-```powershell
-$files = Get-ChildItem "source\server" -Recurse -Filter *.java | ForEach-Object { $_.FullName }; javac -cp "source/lib/*" -d out $files; if ($LASTEXITCODE -eq 0) { java -cp "out;source/lib/*" ServerMain }
+### 1. Clone repository
+```bash
+git clone https://github.com/leeminhnam/realtime-messaging-system.git
+cd realtime-messaging-system
 ```
 
-### 2. Khởi động Client (mở nhiều terminal để chạy nhiều Client cùng lúc)
-```powershell
-$files = Get-ChildItem "source\client" -Recurse -Filter *.java | ForEach-Object { $_.FullName }; javac -cp "source/lib/*" -d out $files; if ($LASTEXITCODE -eq 0) { java -cp "out;source/lib/*" ClientMain }
+### 2. Khởi động Server
+Tại thư mục gốc dự án:
+```bash
+java -cp "out/production/realtime-messaging-system;source/lib/*" ServerMain
 ```
+
+### 3. Khởi động Client (mở nhiều terminal để chạy nhiều Client cùng lúc)
+```bash
+java -cp "out/production/realtime-messaging-system;source/lib/*" ClientMain
+```
+
+### 4. Kiểm thử nhanh
+Bộ test (`source/test/`) bao phủ **cả 4 module** với tổng cộng **154 ca kiểm thử**, không cần thư viện test ngoài. Test dùng CSDL SQLite và thư mục upload tạm (thông qua `-Dchatnest.db.dir`, tự xóa khi kết thúc) nên **không ảnh hưởng** tới `messaging_app.db` thật. Handler được test trực tiếp bằng gói JSON, không cần mở socket hay giao diện.
+
+```bash
+# Biên dịch và chạy toàn bộ test của 4 module (tại thư mục gốc dự án, dùng Git Bash)
+javac -encoding UTF-8 -cp "source/lib/*" -d out_test $(find source/server source/test -name '*.java') && java -Dfile.encoding=UTF-8 -cp "out_test;source/lib/*" AllTests
+```
+> Trên Linux/macOS đổi `;` trong classpath thành `:`.
+
+Chạy riêng từng module (sau khi đã biên dịch như trên, chỉ cần chạy lệnh `java`):
+```bash
+# Module 1 - Account (26 ca)
+java -Dfile.encoding=UTF-8 -cp "out_test;source/lib/*" account.AccountModuleTest
+
+# Module 2 - Private chat (38 ca)
+java -Dfile.encoding=UTF-8 -cp "out_test;source/lib/*" private_chat.PrivateChatModuleTest
+
+# Module 3 - Group chat (57 ca)
+java -Dfile.encoding=UTF-8 -cp "out_test;source/lib/*" group_chat.GroupChatModuleTest
+
+# Module 4 - File & Notification (33 ca)
+java -Dfile.encoding=UTF-8 -cp "out_test;source/lib/*" file_notification.FileNotificationModuleTest
+```
+
+Kết quả mong đợi khi chạy `AllTests`: `Kết quả: 154 đạt, 0 lỗi` (thoát với mã 1 nếu có ca lỗi). Mỗi ca in `[PASS]` hoặc `[FAIL]` kèm mô tả. Phạm vi kiểm thử:
+
+| Module | File test | Nội dung kiểm tra |
+|--------|-----------|-------------------|
+| 1 - Account | `account/AccountModuleTest` | `UserDAO`: đăng ký, chặn trùng username (không phân biệt hoa/thường), mật khẩu băm BCrypt, đăng nhập đúng/sai/không tồn tại, ONLINE/OFFLINE, cập nhật hồ sơ. `AccountHandler`: `REGISTER`, `LOGIN`, `UPDATE_PROFILE`, `GET_USER_LIST`, JSON sai định dạng. Cấu trúc gói broadcast `USER_STATUS_CHANGE` |
+| 2 - Private chat | `private_chat/PrivateChatModuleTest` | `ConversationDAO`: một cặp user chỉ có một đoạn chat dù đảo thứ tự/hoa thường, chặn tự chat. `MessageDAO`: lưu, giới hạn và thứ tự lịch sử, đếm/đánh dấu đã đọc. `PrivateChatHandler`: kiểm tra đầu vào, chuyển tiếp realtime + thông báo cho người nhận online, cắt nội dung thông báo dài, lưu tin cho người nhận offline, lịch sử tự đánh dấu đã đọc |
+| 3 - Group chat | `group_chat/GroupChatModuleTest` | `GroupDAO`: tạo nhóm, vai trò LEADER/MEMBER, thêm/xóa thành viên, chuyển quyền, xóa nhóm. `GroupMessageDAO`: lưu và lịch sử. `GroupChatHandler`: tạo nhóm (lọc trùng/user lạ), phân quyền trưởng nhóm khi thêm/xóa/chuyển quyền, quy tắc rời nhóm, gửi tin chuyển tiếp cho thành viên online (trừ người gửi), chặn người ngoài nhóm, gói `GROUP_UPDATED` |
+| 4 - File & thông báo | `file_notification/FileNotificationModuleTest` | `FileAttachmentDAO`: lưu và truy vấn metadata. `FileNotificationHandler`: kiểm tra đầu vào (kể cả Base64 sai), lưu tệp ra đĩa với tên đã làm sạch, tin nhắn media JSON, thông báo `RECEIVE_NOTIFICATION` theo từng loại IMAGE/VIDEO/AUDIO/FILE, tải file khứ hồi khớp bản gốc, tệp mất trên đĩa |
+
+> Phạm vi hiện tại là tầng server (DAO + handler). Chưa có test giao diện Swing và test tích hợp qua socket thật (xem mục Hướng phát triển).
+
+---
+
+## 🔗 GIAO TIẾP (GIAO THỨC SỬ DỤNG)
+
+Client và Server giao tiếp qua **TCP Socket** (cổng mặc định `8888`, mã hóa UTF-8). Mỗi gói tin là **một đối tượng JSON trên một dòng** (kết thúc bằng `\n`) theo định dạng chung:
+
+```json
+// Request (Client -> Server)
+{"action": "TÊN_ACTION", "data": { ... }}
+
+// Response (Server -> Client)
+{"action": "TÊN_ACTION_RESPONSE", "status": "SUCCESS | FAILED", "message": "...", "data": { ... }}
+```
+
+Server phân luồng gói tin theo `action` tới handler của từng module. Action không hỗ trợ nhận lại `{"action":"ERROR","status":"FAILED"}`.
+
+| Module | Action (Request) | Dữ liệu `data` gửi lên | Phản hồi / Output |
+|--------|------------------|------------------------|-------------------|
+| 1 - Account | `REGISTER` | `username`, `password`, `fullName` | `REGISTER_RESPONSE` |
+| 1 - Account | `LOGIN` | `username`, `password` | `LOGIN_RESPONSE` (kèm `fullName`, `avatar`, `allUsers`) |
+| 1 - Account | `UPDATE_PROFILE` | `fullName`, `avatar` (tùy chọn) | `UPDATE_PROFILE_RESPONSE` |
+| 1 - Account | `GET_USER_LIST` | — | `GET_USER_LIST_RESPONSE` (`users`) |
+| 2 - Private chat | `SEND_PRIVATE_MESSAGE` | người nhận, nội dung | `SEND_PRIVATE_MESSAGE_RESPONSE` + đẩy tin tới người nhận |
+| 2 - Private chat | `GET_CHAT_HISTORY` | đối tác hội thoại | `GET_CHAT_HISTORY_RESPONSE` |
+| 2 - Private chat | `MARK_MESSAGES_READ` | đối tác hội thoại | Cập nhật trạng thái đã đọc |
+| 3 - Group chat | `CREATE_GROUP`, `GET_MY_GROUPS`, `GET_GROUP_MEMBERS` | thông tin nhóm | Phản hồi dạng `<ACTION>_RESPONSE` |
+| 3 - Group chat | `ADD_GROUP_MEMBER`, `REMOVE_GROUP_MEMBER`, `TRANSFER_LEADER`, `LEAVE_GROUP` | nhóm, thành viên | Phản hồi dạng `<ACTION>_RESPONSE` |
+| 3 - Group chat | `SEND_GROUP_MESSAGE`, `GET_GROUP_HISTORY` | nhóm, nội dung | Phản hồi + đẩy tin tới các thành viên online |
+| 4 - File | `SEND_FILE` | người nhận, tên/loại/kích thước file, nội dung Base64 | `SEND_FILE_RESPONSE` |
+| 4 - File | `DOWNLOAD_FILE` | định danh file | `DOWNLOAD_FILE_RESPONSE` |
+
+**Gói tin Server chủ động đẩy xuống Client (không cần request):**
+
+| Action | Khi nào gửi | Nội dung `data` |
+|--------|-------------|-----------------|
+| `USER_STATUS_CHANGE` | Có người đăng nhập / đăng xuất / mất kết nối (broadcast tới mọi client online, trừ chính người đó) | `username`, `status` (`ONLINE`/`OFFLINE`), `fullName`, `avatar` (khi ONLINE) |
+| `RECEIVE_NOTIFICATION` | Có tin nhắn hoặc file mới gửi tới người dùng | `sender`, `senderFullName`, `type`/`fileType`, `message` |
+
+Ví dụ luồng đăng nhập:
+```json
+→ {"action":"LOGIN","data":{"username":"alice","password":"pw123"}}
+← {"action":"LOGIN_RESPONSE","status":"SUCCESS","message":"Đăng nhập thành công!","data":{"username":"alice","fullName":"Alice","avatar":"","status":"ONLINE","allUsers":[...]}}
+← (tới client khác) {"action":"USER_STATUS_CHANGE","data":{"username":"alice","status":"ONLINE","fullName":"Alice","avatar":""}}
+```
+
+---
+
+## 📊 KẾT QUẢ THỰC NGHIỆM
+
+> Đưa ảnh chụp kết quả hoặc mô tả log chạy thử.
+
+![Demo Result](./statics/result.png)
 
 ---
 
@@ -93,6 +186,13 @@ realtime-messaging-system/
     │   ├── private_chat/             # Khung chat 1-1, bong bóng chat
     │   ├── group_chat/               # Module 3: Khung chat nhóm, thành viên, tạo nhóm
     │   └── file_notification/        # Module 4: Audio, Video, Image, Toast
+    ├── test/
+    │   ├── AllTests.java             # Chạy toàn bộ test của 4 module
+    │   ├── testutil/TestSupport.java # Tiện ích test: CSDL tạm, ghi nhận kết quả, bắt gói JSON
+    │   ├── account/                  # Test Module 1
+    │   ├── private_chat/             # Test Module 2
+    │   ├── group_chat/               # Test Module 3
+    │   └── file_notification/        # Test Module 4
     └── server/
         ├── ServerMain.java
         ├── database/DatabaseManager.java
@@ -101,3 +201,42 @@ realtime-messaging-system/
         ├── group_chat/               # Module 3: Xử lý chat nhóm
         └── file_notification/        # Module 4: Xử lý tệp & thông báo
 ```
+## 🧩 HƯỚNG PHÁT TRIỂN THÊM
+
+**Bảo mật & xác thực**
+- Mã hóa đường truyền bằng TLS/SSL (`SSLServerSocket`) thay cho TCP thuần
+- Cấp token phiên (JWT) thay vì tin vào username của kết nối; giới hạn số lần đăng nhập sai
+- Chức năng quên/đổi mật khẩu, xác thực email, đăng nhập một tài khoản trên nhiều thiết bị
+- Phân quyền chi tiết hơn (quản trị viên, chặn/báo cáo người dùng)
+
+**Tính năng nhắn tin**
+- Thu hồi/chỉnh sửa tin nhắn, trả lời (reply) và thả cảm xúc (reaction)
+- Hiển thị "đang nhập..." (typing indicator) và thời điểm hoạt động gần nhất
+- Tìm kiếm tin nhắn, ghim tin nhắn, lưu trữ hội thoại
+- Gọi thoại/video (WebRTC hoặc UDP streaming)
+- Thông báo ngoài ứng dụng (system tray), bật/tắt hoặc tùy chỉnh âm thanh thông báo
+
+**Hiệu năng & kiến trúc**
+- Truyền file lớn theo từng khối (chunk) thay cho Base64 một gói; hỗ trợ tiếp tục tải khi đứt kết nối
+- Dùng Connection Pool (HikariCP) và NIO/Netty thay cho mô hình một luồng mỗi client
+- Phân trang lịch sử tin nhắn, cơ chế heartbeat phát hiện client mất kết nối
+- Chuyển CSDL từ SQLite sang PostgreSQL/MySQL khi tăng số lượng người dùng
+
+**Chất lượng & triển khai**
+- Bổ sung test tích hợp qua socket thật và test giao diện Swing; chuyển bộ test hiện tại sang JUnit + Maven/Gradle, tích hợp CI (GitHub Actions)
+- Cải thiện giao diện người dùng (giao diện tối, đa ngôn ngữ, responsive)
+- Đóng gói ứng dụng bằng Docker (server) và `jpackage` (client)
+- Triển khai server trên cloud
+
+---
+
+## 📝 GHI CHÚ
+
+- Repo tuân thủ đúng cấu trúc đã hướng dẫn trong `INSTRUCTION.md`.
+- Đảm bảo test kỹ trước khi submit.
+
+---
+
+## 📚 TÀI LIỆU THAM KHẢO
+
+> (Nếu có) Liệt kê các tài liệu, API docs, hoặc nguồn tham khảo đã sử dụng.
