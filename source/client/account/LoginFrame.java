@@ -27,7 +27,7 @@ public class LoginFrame extends JFrame {
     public LoginFrame(LoginSuccessCallback loginSuccessCallback) {
         this.loginSuccessCallback = loginSuccessCallback;
 
-        setTitle("Hệ thống nhắn tin thời gian thực - Đăng nhập");
+        setTitle("ChatNest - Đăng nhập");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(420, 340);
         setLocationRelativeTo(null);

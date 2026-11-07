@@ -1,6 +1,6 @@
 # BÀI TẬP LỚN: LẬP TRÌNH MẠNG  
 
-## HỆ THỐNG NHẮN TIN THỜI GIAN THỰC (REAL-TIME MESSAGING SYSTEM)
+## CHATNEST – NỀN TẢNG NHẮN TIN CLIENT–SERVER BẰNG JAVA SOCKET
 
 ---
 
@@ -14,13 +14,13 @@
 | 4 | Lê Minh Nam | B23DCCN579 | leminhnam325@gmail.com | Module 3 (Group Chat) |
 
 **Tên nhóm:** Nhóm 07 – Lập trình mạng - INT1433-20261-09  
-**Chủ đề:** Hệ thống nhắn tin thời gian thực (Real-time Messaging System)
+**Đề tài:** ChatNest – Nền tảng nhắn tin nhóm & riêng tư, truyền file và thông báo theo thời gian thực
 
 ---
 
 ## 🧠 MÔ TẢ HỆ THỐNG
 
-Hệ thống nhắn tin thời gian thực được xây dựng theo mô hình **Client - Server**, hỗ trợ người dùng giao tiếp, nhắn tin tức thời (chat 1-1 và chat nhóm), quản lý trạng thái trực tuyến và truyền tải file qua mạng.
+**ChatNest** được xây dựng theo mô hình **Client - Server**, hỗ trợ người dùng giao tiếp, nhắn tin tức thời (chat 1-1 và chat nhóm), quản lý trạng thái trực tuyến và truyền tải file qua mạng.
 
 Hệ thống bao gồm 4 module chức năng chính:
 - **Module 1: Quản lý tài khoản & Trạng thái người dùng (`account`)**: Đăng ký, đăng nhập, đăng xuất, quản lý hồ sơ cá nhân, xem danh sách người dùng và theo dõi trạng thái online/offline theo thời gian thực.
@@ -91,11 +91,13 @@ realtime-messaging-system/
     │   ├── MainFrame.java
     │   ├── account/                  # Đăng ký, đăng nhập, danh bạ
     │   ├── private_chat/             # Khung chat 1-1, bong bóng chat
+    │   ├── group_chat/               # Module 3: Khung chat nhóm, thành viên, tạo nhóm
     │   └── file_notification/        # Module 4: Audio, Video, Image, Toast
     └── server/
         ├── ServerMain.java
         ├── database/DatabaseManager.java
         ├── account/                  # Xử lý tài khoản
         ├── private_chat/             # Xử lý nhắn tin 1-1
+        ├── group_chat/               # Module 3: Xử lý chat nhóm
         └── file_notification/        # Module 4: Xử lý tệp & thông báo
 ```

@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import database.DatabaseManager;
 import file_notification.handler.FileNotificationHandler;
+import group_chat.handler.GroupChatHandler;
 import private_chat.handler.PrivateChatHandler;
 
 import java.io.BufferedReader;
@@ -26,7 +27,7 @@ public class ServerMain {
 
     public static void main(String[] args) {
         System.out.println("==================================================");
-        System.out.println("   HỆ THỐNG NHẮN TIN THỜI GIAN THỰC - SERVER      ");
+        System.out.println("   CHATNEST - SERVER                              ");
         System.out.println("==================================================");
 
         // Khởi tạo CSDL SQLite và reset trạng thái các user về OFFLINE
@@ -109,7 +110,7 @@ public class ServerMain {
                         else if (FileNotificationHandler.isFileNotificationAction(action)) {
                             FileNotificationHandler.handleFileNotificationAction(req, writer, authenticatedUsername, onlineClients);
                         }
-                        // 4. Các hành động chưa hỗ trợ
+                        
                         else {
                             JsonObject err = new JsonObject();
                             err.addProperty("action", "ERROR");
