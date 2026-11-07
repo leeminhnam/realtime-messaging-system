@@ -5,6 +5,9 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import file_notification.controller.FileClientManager;
 import file_notification.notification.NotificationToast;
+import group_chat.controller.GroupChatController;
+import group_chat.view.GroupChatPanel;
+import group_chat.view.GroupListPanel;
 import private_chat.controller.PrivateChatController;
 import private_chat.model.ChatPartner;
 import private_chat.view.PrivateChatPanel;
@@ -25,6 +28,9 @@ public class MainFrame extends JFrame {
     private UserListPanel userListPanel;
     private PrivateChatPanel privateChatPanel;
     private PrivateChatController privateChatController;
+    private GroupListPanel groupListPanel;
+    private GroupChatPanel groupChatPanel;
+    private GroupChatController groupChatController;
 
     public MainFrame(Socket socket, BufferedReader reader, PrintWriter writer, JsonObject currentUser) {
         this.socket = socket;
@@ -100,13 +106,32 @@ public class MainFrame extends JFrame {
             userListPanel.loadUserList(usersArray);
         }
 
-        userListPanel.setPreferredSize(new Dimension(280, 0));
-        mainPanel.add(userListPanel, BorderLayout.WEST);
+        groupListPanel = new GroupListPanel(username);
 
-        // Khung Private Chat ở vùng trung tâm
+        // Sidebar có 2 tab: danh sách người dùng (chat riêng) và danh sách nhóm (chat nhóm)
+        JTabbedPane sidebarTabs = new JTabbedPane();
+        sidebarTabs.addTab("Người dùng", userListPanel);
+        sidebarTabs.addTab("Nhóm", groupListPanel);
+        sidebarTabs.setPreferredSize(new Dimension(280, 0));
+        mainPanel.add(sidebarTabs, BorderLayout.WEST);
+
+        // Vùng trung tâm: chuyển qua lại giữa khung Private Chat và khung Group Chat
         privateChatPanel = new PrivateChatPanel();
         privateChatController = new PrivateChatController(privateChatPanel, writer, username);
-        mainPanel.add(privateChatPanel, BorderLayout.CENTER);
+
+        groupChatPanel = new GroupChatPanel();
+        groupChatController = new GroupChatController(this, groupListPanel, groupChatPanel, userListPanel, writer, username);
+
+        CardLayout centerLayout = new CardLayout();
+        JPanel centerPanel = new JPanel(centerLayout);
+        centerPanel.add(privateChatPanel, "PRIVATE");
+        centerPanel.add(groupChatPanel, "GROUP");
+        mainPanel.add(centerPanel, BorderLayout.CENTER);
+
+        // Đổi tab ở sidebar thì đổi khung chat tương ứng
+        sidebarTabs.addChangeListener(e -> {
+            centerLayout.show(centerPanel, sidebarTabs.getSelectedIndex() == 0 ? "PRIVATE" : "GROUP");
+        });
 
         // Lắng nghe sự kiện click chọn một người dùng từ danh bạ bên trái
         userListPanel.setUserSelectListener(userItem -> {
@@ -209,7 +234,11 @@ public class MainFrame extends JFrame {
                             privateChatController.onChatHistoryReceived(data);
                         }
                     }
-                    // 8. Phản hồi khi sửa Hồ sơ thành công
+                    // 8. Các gói tin của Module 3: Chat nhóm (tạo nhóm, thành viên, tin nhắn nhóm...)
+                    else if (GroupChatController.isGroupAction(action)) {
+                        groupChatController.handleServerMessage(msg);
+                    }
+                    // 9. Phản hồi khi sửa Hồ sơ thành công
                     else if ("UPDATE_PROFILE_RESPONSE".equalsIgnoreCase(action)) {
                         String status = msg.get("status").getAsString();
                         String message = msg.get("message").getAsString();

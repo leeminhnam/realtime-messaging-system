@@ -178,6 +178,14 @@ public class ChatInputPanel extends JPanel {
         btnVoice.setEnabled(enabled);
     }
 
+    /**
+     * Ẩn nút đính kèm và ghi âm (chat nhóm chỉ gửi tin nhắn chữ).
+     */
+    public void hideMediaButtons() {
+        btnAttach.setVisible(false);
+        btnVoice.setVisible(false);
+    }
+
     public void focusInput() {
         txtInput.requestFocusInWindow();
     }

@@ -77,7 +77,37 @@ public class DatabaseManager {
                 + "FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE"
                 + ");";
 
-        // 5. Các Index để tối ưu tốc độ truy vấn
+        // 5. Các bảng của Module 3: Chat nhóm
+        String createGroupsTable = "CREATE TABLE IF NOT EXISTS chat_groups ("
+                + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                + "name TEXT NOT NULL, "
+                + "created_at DATETIME DEFAULT CURRENT_TIMESTAMP"
+                + ");";
+
+        // Thành viên nhóm, role: 'LEADER' (trưởng nhóm) hoặc 'MEMBER' (thành viên)
+        String createGroupMembersTable = "CREATE TABLE IF NOT EXISTS group_members ("
+                + "group_id INTEGER NOT NULL, "
+                + "username TEXT NOT NULL COLLATE NOCASE, "
+                + "role TEXT NOT NULL DEFAULT 'MEMBER', "
+                + "joined_at DATETIME DEFAULT CURRENT_TIMESTAMP, "
+                + "PRIMARY KEY (group_id, username)"
+                + ");";
+
+        String createGroupMessagesTable = "CREATE TABLE IF NOT EXISTS group_messages ("
+                + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                + "group_id INTEGER NOT NULL, "
+                + "sender_username TEXT NOT NULL COLLATE NOCASE, "
+                + "content TEXT NOT NULL, "
+                + "sent_at DATETIME DEFAULT CURRENT_TIMESTAMP"
+                + ");";
+
+        String createGroupMembersIndex = "CREATE INDEX IF NOT EXISTS idx_group_members_user "
+                + "ON group_members(username);";
+
+        String createGroupMessagesIndex = "CREATE INDEX IF NOT EXISTS idx_group_messages_group "
+                + "ON group_messages(group_id, id);";
+
+        // 6. Các Index để tối ưu tốc độ truy vấn
         String createConvIndex = "CREATE INDEX IF NOT EXISTS idx_conv_users "
                 + "ON conversations(user1_username, user2_username);";
 
@@ -98,11 +128,16 @@ public class DatabaseManager {
             stmt.execute(createConversationsTable);
             stmt.execute(createMessagesTable);
             stmt.execute(createFileAttachmentsTable);
+            stmt.execute(createGroupsTable);
+            stmt.execute(createGroupMembersTable);
+            stmt.execute(createGroupMessagesTable);
 
             // Tạo các chỉ mục tìm kiếm
             stmt.execute(createConvIndex);
             stmt.execute(createMessagesIndex);
             stmt.execute(createFileIndex);
+            stmt.execute(createGroupMembersIndex);
+            stmt.execute(createGroupMessagesIndex);
 
             // Đảm bảo thư mục lưu file upload tồn tại
             File uploadDir = new File(DB_DIR + "/uploads");
@@ -113,7 +148,7 @@ public class DatabaseManager {
             // Reset tất cả tài khoản về OFFLINE khi server khởi động lại
             stmt.executeUpdate("UPDATE users SET status = 'OFFLINE';");
 
-            System.out.println("[DATABASE] Kết nối và khởi tạo CSDL SQLite thành công (users, conversations, messages, file_attachments)!");
+            System.out.println("[DATABASE] Kết nối và khởi tạo CSDL SQLite thành công (users, conversations, messages, file_attachments, chat_groups, group_members, group_messages)!");
         } catch (SQLException e) {
             System.err.println("[DATABASE] Lỗi khởi tạo CSDL: " + e.getMessage());
             e.printStackTrace();

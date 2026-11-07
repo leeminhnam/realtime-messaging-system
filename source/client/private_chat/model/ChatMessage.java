@@ -6,6 +6,7 @@ public class ChatMessage {
     private int id;
     private int conversationId;
     private String sender;
+    private String senderName;
     private String receiver;
     private String content;
     private String sentAt;
@@ -65,7 +66,19 @@ public class ChatMessage {
 
         boolean isMine = sender.equalsIgnoreCase(currentUsername);
 
-        return new ChatMessage(id, convId, sender, receiver, content, sentAt, isMine, isRead);
+        ChatMessage msg = new ChatMessage(id, convId, sender, receiver, content, sentAt, isMine, isRead);
+        // Họ tên người gửi (chỉ có trong tin nhắn nhóm)
+        if (json.has("senderFullName") && !json.get("senderFullName").isJsonNull()) {
+            msg.senderName = json.get("senderFullName").getAsString();
+        }
+        return msg;
+    }
+
+    /**
+     * Tên hiển thị của người gửi: ưu tiên họ tên, không có thì dùng username.
+     */
+    public String getSenderName() {
+        return senderName != null && !senderName.isEmpty() ? senderName : sender;
     }
 
     /**

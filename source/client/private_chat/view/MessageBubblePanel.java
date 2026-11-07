@@ -16,7 +16,15 @@ import java.io.ByteArrayInputStream;
 
 public class MessageBubblePanel extends JPanel {
 
+    // Có hiện tên người gửi phía trên tin nhắn của người khác không (chat nhóm)
+    private final boolean showSender;
+
     public MessageBubblePanel(ChatMessage msg) {
+        this(msg, false);
+    }
+
+    public MessageBubblePanel(ChatMessage msg, boolean showSender) {
+        this.showSender = showSender;
         setOpaque(false);
 
         boolean isMine = msg.isMine();
@@ -66,6 +74,15 @@ public class MessageBubblePanel extends JPanel {
         lblTime.setFont(new Font("Segoe UI", Font.PLAIN, 10));
         lblTime.setForeground(timeColor);
         lblTime.setAlignmentX(isMine ? Component.RIGHT_ALIGNMENT : Component.LEFT_ALIGNMENT);
+
+        // Chat nhóm: hiện tên người gửi phía trên tin nhắn của người khác
+        if (showSender && !isMine) {
+            JLabel lblSender = new JLabel(msg.getSenderName());
+            lblSender.setFont(new Font("Segoe UI", Font.BOLD, 11));
+            lblSender.setForeground(new Color(0, 100, 200));
+            bubbleBox.add(lblSender);
+            bubbleBox.add(Box.createVerticalStrut(2));
+        }
 
         bubbleBox.add(lblContent);
         if (!timeStr.isEmpty()) {

@@ -110,7 +110,11 @@ public class ServerMain {
                         else if (FileNotificationHandler.isFileNotificationAction(action)) {
                             FileNotificationHandler.handleFileNotificationAction(req, writer, authenticatedUsername, onlineClients);
                         }
-                        
+                        // 4. Phân luồng các gói tin liên quan tới Module 3: Chat nhóm (Group Chat)
+                        else if (GroupChatHandler.isGroupChatAction(action)) {
+                            GroupChatHandler.handleGroupChatAction(req, writer, authenticatedUsername, onlineClients);
+                        }
+                        // 5. Các hành động chưa hỗ trợ
                         else {
                             JsonObject err = new JsonObject();
                             err.addProperty("action", "ERROR");

@@ -98,6 +98,13 @@ public class UserListPanel extends JPanel {
         }
     }
 
+    /**
+     * Lấy danh sách tất cả người dùng đang có trong danh bạ (dùng khi tạo nhóm / thêm thành viên nhóm).
+     */
+    public java.util.List<UserItem> getUsers() {
+        return java.util.Collections.list(listModel.elements());
+    }
+
     // Model dữ liệu từng item
     public static class UserItem {
         private final String username;

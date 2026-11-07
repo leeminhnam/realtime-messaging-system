@@ -10,6 +10,13 @@ public class MessageListPanel extends JPanel {
     private final JPanel contentPanel = new JPanel();
     private final JScrollPane scrollPane;
 
+    // Có hiện tên người gửi trên bong bóng của người khác không (dùng cho chat nhóm)
+    private boolean showSenderName = false;
+
+    public void setShowSenderName(boolean showSenderName) {
+        this.showSenderName = showSenderName;
+    }
+
     public MessageListPanel() {
         setLayout(new BorderLayout());
 
@@ -31,7 +38,7 @@ public class MessageListPanel extends JPanel {
      * Thêm một tin nhắn mới vào cuối cuộc trò chuyện và tự động cuộn xuống dưới cùng.
      */
     public void addMessage(ChatMessage msg) {
-        contentPanel.add(new MessageBubblePanel(msg));
+        contentPanel.add(new MessageBubblePanel(msg, showSenderName));
         contentPanel.revalidate();
         contentPanel.repaint();
         scrollToBottom();
@@ -44,7 +51,7 @@ public class MessageListPanel extends JPanel {
         contentPanel.removeAll();
         if (messages != null) {
             for (ChatMessage msg : messages) {
-                contentPanel.add(new MessageBubblePanel(msg));
+                contentPanel.add(new MessageBubblePanel(msg, showSenderName));
             }
         }
         contentPanel.revalidate();
