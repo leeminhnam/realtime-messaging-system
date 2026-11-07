@@ -5,7 +5,7 @@
 ---
 
 ### 📌 THÔNG TIN CHUNG
-* **Dự án:** ChatNest – Nền tảng nhắn tin Client–Server bằng Java Socket
+* **Dự án:** ChatNest – Hệ thống giao tiếp và trao đổi dữ liệu thời gian thực
 * **Học phần:** Lập trình mạng (INT1433) — TS. Đặng Ngọc Hùng
 * **Nhóm:** 07
 * **Module:** Module 4 — Hỗ trợ Hình ảnh, Video, Ghi âm giọng nói (Voice Note), Tệp tin và Thông báo nổi thời gian thực.

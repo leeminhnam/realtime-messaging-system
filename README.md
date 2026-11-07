@@ -1,6 +1,6 @@
 # BÀI TẬP LỚN: LẬP TRÌNH MẠNG  
 
-## CHATNEST – NỀN TẢNG NHẮN TIN CLIENT–SERVER BẰNG JAVA SOCKET
+## CHATNEST – HỆ THỐNG GIAO TIẾP VÀ TRAO ĐỔI DỮ LIỆU THỜI GIAN THỰC
 
 ---
 
@@ -14,7 +14,7 @@
 | 4 | Lê Minh Nam | B23DCCN579 | leminhnam325@gmail.com | Module 3 (Group Chat) |
 
 **Tên nhóm:** Nhóm 07 – Lập trình mạng - INT1433-20261-09  
-**Đề tài:** ChatNest – Nền tảng nhắn tin nhóm & riêng tư, truyền file và thông báo theo thời gian thực
+**Đề tài:** ChatNest – Hệ thống giao tiếp và trao đổi dữ liệu thời gian thực
 
 ---
 
