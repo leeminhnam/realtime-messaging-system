@@ -17,8 +17,10 @@ public class LoginFrame extends JFrame {
         void onLoginSuccess(Socket socket, BufferedReader reader, PrintWriter writer, JsonObject userData);
     }
 
-    private JTextField txtHost;
-    private JTextField txtPort;
+    // Địa chỉ Server cố định; có thể ghi đè khi chạy bằng -Dchat.host=... -Dchat.port=...
+    private static final String SERVER_HOST = System.getProperty("chat.host", "localhost");
+    private static final int SERVER_PORT = Integer.getInteger("chat.port", 8888);
+
     private JTextField txtUsername;
     private JPasswordField txtPassword;
 
@@ -29,7 +31,7 @@ public class LoginFrame extends JFrame {
 
         setTitle("ChatNest - Đăng nhập");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(420, 340);
+        setSize(420, 260);
         setLocationRelativeTo(null);
         setResizable(false);
 
@@ -45,17 +47,11 @@ public class LoginFrame extends JFrame {
         lblTitle.setForeground(new Color(33, 150, 243));
         mainPanel.add(lblTitle, BorderLayout.NORTH);
 
-        JPanel formPanel = new JPanel(new GridLayout(4, 2, 8, 12));
+        JPanel formPanel = new JPanel(new GridLayout(2, 2, 8, 12));
 
-        txtHost = new JTextField("localhost");
-        txtPort = new JTextField("8888");
         txtUsername = new JTextField();
         txtPassword = new JPasswordField();
 
-        formPanel.add(new JLabel("Server Host:"));
-        formPanel.add(txtHost);
-        formPanel.add(new JLabel("Port:"));
-        formPanel.add(txtPort);
         formPanel.add(new JLabel("Tên đăng nhập:"));
         formPanel.add(txtUsername);
         formPanel.add(new JLabel("Mật khẩu:"));
@@ -81,18 +77,10 @@ public class LoginFrame extends JFrame {
     }
 
     private void handleOpenRegister() {
-        try {
-            String host = txtHost.getText().trim();
-            int port = Integer.parseInt(txtPort.getText().trim());
-            new RegisterFrame(host, port).setVisible(true);
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Cổng Port không hợp lệ!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-        }
+        new RegisterFrame(SERVER_HOST, SERVER_PORT).setVisible(true);
     }
 
     private void handleLogin() {
-        String host = txtHost.getText().trim();
-        String portStr = txtPort.getText().trim();
         String username = txtUsername.getText().trim();
         String password = new String(txtPassword.getPassword());
 
@@ -104,8 +92,7 @@ public class LoginFrame extends JFrame {
 
         new Thread(() -> {
             try {
-                int port = Integer.parseInt(portStr);
-                Socket socket = new Socket(host, port);
+                Socket socket = new Socket(SERVER_HOST, SERVER_PORT);
                 PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
                 BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
 
