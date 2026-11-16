@@ -162,9 +162,42 @@ Ví dụ luồng đăng nhập:
 
 ## 📊 KẾT QUẢ THỰC NGHIỆM
 
-> Đưa ảnh chụp kết quả hoặc mô tả log chạy thử.
+Thực nghiệm chạy trên một máy Windows 11 (Intel Core i5-11400H, 16 GB RAM, OpenJDK 22). Server và các Client kết nối qua `localhost:8888`. Toàn bộ ảnh nằm trong thư mục [`statics/results`](./statics/results).
 
-![Demo Result](./statics/result.png)
+### 1. Kiểm thử chức năng (`AllTests`)
+
+Kết quả: **154/154 ca đạt**, chia theo bốn module: Account 26, Private chat 38, Group chat 57, File & Notification 33. Ảnh dưới đây giữ nguyên các dòng log thật; mỗi module chỉ hiện 3 ca đầu.
+
+![Kết quả AllTests](./statics/results/test_alltests.png)
+
+### 2. Kiểm thử hoạt động mạng (`NetworkTest`)
+
+Chương trình khởi động Server thật và mở các Client bằng socket thật. Kết quả: **21/21 kịch bản đạt**.
+
+| Kịch bản | Kết quả đo |
+|:---|:---|
+| Thông báo trạng thái ONLINE / OFFLINE | 79 ms / 8 ms |
+| 10 / 50 / 100 Client kết nối đồng loạt, mỗi Client gửi 1 tin | Đăng nhập và nhận tin đủ 10/10, 50/50, 100/100 (tin đến đủ trong 118 / 794 / 1766 ms) |
+| Hai Client gửi đồng thời mỗi bên 200 tin | Nhận đủ 200/200 mỗi bên, đúng thứ tự |
+| Truyền tệp 1 KB đến 20 MB | Nội dung khớp SHA-256; tệp 20 MB tải lên 245 ms, tải về 219 ms |
+| Dữ liệu sai, action lạ, JSON hỏng, mất kết nối đột ngột | Server trả lỗi hoặc bỏ qua gói hỏng, không bị dừng; tin gửi khi người nhận offline vẫn được lưu |
+| Tin nhắn nhóm 3 người | 2 thành viên còn lại nhận được trong 25 ms |
+
+![Kết quả NetworkTest](./statics/results/test_network.png)
+
+> Số đo thời gian chỉ mang tính tham khảo: Server và Client chạy trên cùng một máy nên không có độ trễ mạng thực, và mỗi lần chạy cho kết quả hơi khác nhau.
+
+### 3. Giao diện chương trình
+
+| Đăng nhập | Cửa sổ chính, trạng thái online/offline |
+|:---:|:---:|
+| ![Đăng nhập](./statics/results/login.png) | ![Cửa sổ chính](./statics/results/main.png) |
+| **Nhắn tin 1-1 thời gian thực** | **Nhắn tin nhóm, đánh dấu tin chưa xem** |
+| ![Chat 1-1](./statics/results/private_realtime.png) | ![Chat nhóm](./statics/results/group.png) |
+| **Quản lý thành viên nhóm** | **Gửi ảnh, tài liệu, tin nhắn thoại** |
+| ![Thành viên nhóm](./statics/results/group_members.png) | ![Tin nhắn tệp](./statics/results/file_tall.png) |
+| **Xem ảnh (phóng to, thu nhỏ, lưu)** | **Thông báo nổi khi có tin mới** |
+| ![Xem ảnh](./statics/results/image_viewer.png) | ![Thông báo](./statics/results/toast.png) |
 
 ---
 
