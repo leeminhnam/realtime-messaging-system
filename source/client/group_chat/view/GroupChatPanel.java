@@ -25,7 +25,7 @@ public class GroupChatPanel extends JPanel {
     public GroupChatPanel() {
         setLayout(new BorderLayout());
 
-        // 1. Màn hình chờ khi chưa chọn nhóm
+        // Màn hình chờ khi chưa chọn nhóm
         JPanel placeholderPanel = new JPanel(new GridBagLayout());
         placeholderPanel.setBackground(new Color(250, 250, 252));
         JLabel lblPlaceholder = new JLabel("Chọn một nhóm ở danh sách bên trái hoặc tạo nhóm mới");
@@ -33,7 +33,7 @@ public class GroupChatPanel extends JPanel {
         lblPlaceholder.setForeground(new Color(130, 130, 130));
         placeholderPanel.add(lblPlaceholder);
 
-        // 2. Header: tên nhóm, thông tin nhóm và nút xem thành viên
+        // Header: tên nhóm, thông tin nhóm và nút xem thành viên
         JPanel headerPanel = new JPanel(new BorderLayout(12, 0));
         headerPanel.setBackground(Color.WHITE);
         headerPanel.setBorder(BorderFactory.createCompoundBorder(
@@ -56,7 +56,7 @@ public class GroupChatPanel extends JPanel {
         headerPanel.add(infoPanel, BorderLayout.CENTER);
         headerPanel.add(btnMembers, BorderLayout.EAST);
 
-        // 3. Danh sách tin nhắn (hiện tên người gửi) và ô nhập (nhóm chỉ gửi chữ)
+        // Danh sách tin nhắn (hiện tên người gửi) và ô nhập (nhóm chỉ gửi chữ)
         messageListPanel.setShowSenderName(true);
         inputPanel.hideMediaButtons();
 
@@ -77,18 +77,14 @@ public class GroupChatPanel extends JPanel {
         cardLayout.show(cardsPanel, CARD_PLACEHOLDER);
     }
 
-    /**
-     * Mở khung chat của một nhóm.
-     */
+    // Mở khung chat của nhóm
     public void showGroup(GroupItem group) {
         updateGroup(group);
         cardLayout.show(cardsPanel, CARD_CHAT);
         inputPanel.focusInput();
     }
 
-    /**
-     * Cập nhật tên, số thành viên, trưởng nhóm trên header (khi nhóm có thay đổi).
-     */
+    // Cập nhật header khi nhóm thay đổi
     public void updateGroup(GroupItem group) {
         this.currentGroup = group;
         lblName.setText(group.getName());

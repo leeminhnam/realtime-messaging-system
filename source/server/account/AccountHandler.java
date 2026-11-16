@@ -11,9 +11,7 @@ import java.util.Map;
 public class AccountHandler {
     private static final Gson gson = new Gson();
 
-    /**
-     * Kiểm tra xem một action có thuộc module Account hay không.
-     */
+    // Các action do AccountHandler xử lý
     public static boolean isAccountAction(String action) {
         return "REGISTER".equalsIgnoreCase(action)
                 || "LOGIN".equalsIgnoreCase(action)
@@ -21,15 +19,7 @@ public class AccountHandler {
                 || "GET_USER_LIST".equalsIgnoreCase(action);
     }
 
-    /**
-     * Xử lý chính cho tất cả các hành động liên quan tới Module Account
-     * 
-     * @param jsonReq         Chuỗi JSON yêu cầu từ Client
-     * @param writer          Luồng ghi dữ liệu riêng của Client hiện tại
-     * @param currentUsername Tên đăng nhập của kết nối hiện tại (truyền theo dạng
-     *                        mảng 1 phần tử để cập nhật sau khi LOGIN thành công)
-     * @return Chuỗi username nếu vừa ĐĂNG NHẬP thành công, ngược lại trả về null
-     */
+    // Trả về username nếu vừa đăng nhập thành công, còn lại trả về null
     public static String handleAccountAction(String jsonReq, PrintWriter writer, String currentUsername) {
         try {
             JsonObject req = JsonParser.parseString(jsonReq).getAsJsonObject();
@@ -64,7 +54,7 @@ public class AccountHandler {
         return null;
     }
 
-    // 1. Xử lý Đăng ký
+    // Đăng ký
     private static void handleRegister(JsonObject data, PrintWriter writer) {
         String username = data.get("username").getAsString();
         String password = data.get("password").getAsString();
@@ -83,7 +73,7 @@ public class AccountHandler {
         }
     }
 
-    // 2. Xử lý Đăng nhập
+    // Đăng nhập
     private static String handleLogin(JsonObject data, PrintWriter writer) {
         String username = data.get("username").getAsString();
         String password = data.get("password").getAsString();
@@ -97,19 +87,19 @@ public class AccountHandler {
             resData.addProperty("avatar", user.get("avatar"));
             resData.addProperty("status", "ONLINE");
 
-            // Lấy danh sách toàn bộ người dùng gửi về cho client vừa đăng nhập
+            // Gửi kèm danh sách người dùng để Client dựng danh bạ luôn
             List<Map<String, String>> allUsers = UserDAO.getAllUsers();
             resData.add("allUsers", gson.toJsonTree(allUsers));
 
             sendResponse(writer, "LOGIN_RESPONSE", "SUCCESS", "Đăng nhập thành công!", resData);
-            return username; // Trả về username để ClientHandler lưu lại phiên
+            return username; // ServerMain lưu username này cho kết nối
         } else {
             sendResponse(writer, "LOGIN_RESPONSE", "FAILED", "Sai tên đăng nhập hoặc mật khẩu!", null);
             return null;
         }
     }
 
-    // 3. Xử lý Cập nhật hồ sơ
+    // Cập nhật hồ sơ
     private static void handleUpdateProfile(String currentUsername, JsonObject data, PrintWriter writer) {
         if (currentUsername == null || currentUsername.isEmpty()) {
             sendResponse(writer, "UPDATE_PROFILE_RESPONSE", "FAILED", "Bạn chưa đăng nhập!", null);
@@ -131,7 +121,7 @@ public class AccountHandler {
         }
     }
 
-    // 4. Lấy danh sách người dùng
+    // Lấy danh sách người dùng
     private static void handleGetUserList(PrintWriter writer) {
         List<Map<String, String>> allUsers = UserDAO.getAllUsers();
         JsonObject resData = new JsonObject();
@@ -139,7 +129,7 @@ public class AccountHandler {
         sendResponse(writer, "GET_USER_LIST_RESPONSE", "SUCCESS", "Tải danh sách thành công", resData);
     }
 
-    // Hàm tiện ích đóng gói JSON gửi về Client
+    // Ghi một gói phản hồi
     public static void sendResponse(PrintWriter writer, String action, String status, String message, JsonObject data) {
         JsonObject res = new JsonObject();
         res.addProperty("action", action);
@@ -151,7 +141,7 @@ public class AccountHandler {
         writer.println(gson.toJson(res));
     }
 
-    // Tạo chuỗi JSON phát thông báo đổi trạng thái Online/Offline
+    // Gói USER_STATUS_CHANGE để broadcast
     public static String createStatusChangeJson(String username, String status, String fullName, String avatar) {
         JsonObject res = new JsonObject();
         res.addProperty("action", "USER_STATUS_CHANGE");

@@ -38,7 +38,7 @@ public class MainFrame extends JFrame {
         this.writer = writer;
         this.currentUser = currentUser;
 
-        // Khởi tạo FileClientManager với luồng ghi mạng
+        // FileClientManager dùng chung luồng ghi của socket
         FileClientManager.getInstance().setWriter(writer);
 
         updateWindowTitle();
@@ -76,7 +76,7 @@ public class MainFrame extends JFrame {
         JButton btnProfile = new JButton("Hồ sơ cá nhân");
         JButton btnLogout = new JButton("Đăng xuất");
 
-        // Mở Cửa sổ Hồ sơ cá nhân
+        // Mở hộp thoại hồ sơ cá nhân
         btnProfile.addActionListener(e -> {
             new ProfileDialog(this, writer, currentUser, () -> {
                 updateUserInfoDisplay();
@@ -108,14 +108,14 @@ public class MainFrame extends JFrame {
 
         groupListPanel = new GroupListPanel(username);
 
-        // Sidebar có 2 tab: danh sách người dùng (chat riêng) và danh sách nhóm (chat nhóm)
+        // Sidebar có 2 tab: người dùng (chat riêng) và nhóm (chat nhóm)
         JTabbedPane sidebarTabs = new JTabbedPane();
         sidebarTabs.addTab("Người dùng", userListPanel);
         sidebarTabs.addTab("Nhóm", groupListPanel);
         sidebarTabs.setPreferredSize(new Dimension(280, 0));
         mainPanel.add(sidebarTabs, BorderLayout.WEST);
 
-        // Vùng trung tâm: chuyển qua lại giữa khung Private Chat và khung Group Chat
+        // Vùng giữa: đổi qua lại giữa khung chat riêng và chat nhóm
         privateChatPanel = new PrivateChatPanel();
         privateChatController = new PrivateChatController(privateChatPanel, writer, username);
 
@@ -128,12 +128,12 @@ public class MainFrame extends JFrame {
         centerPanel.add(groupChatPanel, "GROUP");
         mainPanel.add(centerPanel, BorderLayout.CENTER);
 
-        // Đổi tab ở sidebar thì đổi khung chat tương ứng
+        // Đổi tab thì đổi khung chat tương ứng
         sidebarTabs.addChangeListener(e -> {
             centerLayout.show(centerPanel, sidebarTabs.getSelectedIndex() == 0 ? "PRIVATE" : "GROUP");
         });
 
-        // Lắng nghe sự kiện click chọn một người dùng từ danh bạ bên trái
+        // Chọn một người trong danh bạ thì mở chat với người đó
         userListPanel.setUserSelectListener(userItem -> {
             ChatPartner partner = new ChatPartner(userItem.getUsername(), userItem.getFullName(), userItem.getStatus());
             privateChatController.openChatWith(partner);
@@ -157,7 +157,7 @@ public class MainFrame extends JFrame {
                     JsonObject msg = JsonParser.parseString(line).getAsJsonObject();
                     String action = msg.has("action") ? msg.get("action").getAsString() : "";
 
-                    // 1. Cập nhật trạng thái Online/Offline
+                    // Có người vừa online/offline
                     if ("USER_STATUS_CHANGE".equalsIgnoreCase(action)) {
                         JsonObject data = msg.getAsJsonObject("data");
                         String user = data.get("username").getAsString();
@@ -169,14 +169,14 @@ public class MainFrame extends JFrame {
                             privateChatController.onPartnerStatusChanged(user, status);
                         });
                     }
-                    // 2. Nhận tin nhắn chat riêng / media thời gian thực
+                    // Tin nhắn riêng gửi tới (tin chữ hoặc tệp)
                     else if ("RECEIVE_PRIVATE_MESSAGE".equalsIgnoreCase(action)) {
                         if (msg.has("data")) {
                             JsonObject data = msg.getAsJsonObject("data");
                             privateChatController.onMessageReceived(data);
                         }
                     }
-                    // 3. Phản hồi khi gửi tin nhắn chữ thành công
+                    // Phản hồi khi gửi tin chữ
                     else if ("SEND_PRIVATE_MESSAGE_RESPONSE".equalsIgnoreCase(action)) {
                         String status = msg.has("status") ? msg.get("status").getAsString() : "";
                         if ("SUCCESS".equalsIgnoreCase(status) && msg.has("data")) {
@@ -189,7 +189,7 @@ public class MainFrame extends JFrame {
                             });
                         }
                     }
-                    // 4. Phản hồi khi gửi tệp thành công (Module 4)
+                    // Phản hồi khi gửi tệp
                     else if ("SEND_FILE_RESPONSE".equalsIgnoreCase(action)) {
                         String status = msg.has("status") ? msg.get("status").getAsString() : "";
                         if ("SUCCESS".equalsIgnoreCase(status) && msg.has("data")) {
@@ -202,7 +202,7 @@ public class MainFrame extends JFrame {
                             });
                         }
                     }
-                    // 5. Phản hồi khi tải dữ liệu tệp (Module 4)
+                    // Dữ liệu tệp vừa tải về
                     else if ("DOWNLOAD_FILE_RESPONSE".equalsIgnoreCase(action)) {
                         String status = msg.has("status") ? msg.get("status").getAsString() : "";
                         if ("SUCCESS".equalsIgnoreCase(status) && msg.has("data")) {
@@ -210,7 +210,7 @@ public class MainFrame extends JFrame {
                             FileClientManager.getInstance().onDownloadResponse(data);
                         }
                     }
-                    // 6. Nhận thông báo nổi thời gian thực (Module 4: Toast Notification + Sound)
+                    // Thông báo nổi khi có tin nhắn hoặc tệp mới
                     else if ("RECEIVE_NOTIFICATION".equalsIgnoreCase(action)) {
                         if (msg.has("data")) {
                             JsonObject data = msg.getAsJsonObject("data");
@@ -221,24 +221,24 @@ public class MainFrame extends JFrame {
 
                             SwingUtilities.invokeLater(() -> {
                                 NotificationToast.showNotification(this, notifType, senderUser, senderFullName, notifMessage, targetSender -> {
-                                    // Khi nhấn vào thông báo: tự động chọn hội thoại đó
+                                    // Bấm vào thông báo thì mở luôn hội thoại đó
                                     userListPanel.selectUser(targetSender);
                                 });
                             });
                         }
                     }
-                    // 7. Nhận lịch sử tin nhắn cuộc trò chuyện
+                    // Lịch sử chat riêng
                     else if ("GET_CHAT_HISTORY_RESPONSE".equalsIgnoreCase(action)) {
                         if (msg.has("data")) {
                             JsonObject data = msg.getAsJsonObject("data");
                             privateChatController.onChatHistoryReceived(data);
                         }
                     }
-                    // 8. Các gói tin của Module 3: Chat nhóm (tạo nhóm, thành viên, tin nhắn nhóm...)
+                    // Gói của chat nhóm thì để GroupChatController xử lý
                     else if (GroupChatController.isGroupAction(action)) {
                         groupChatController.handleServerMessage(msg);
                     }
-                    // 9. Phản hồi khi sửa Hồ sơ thành công
+                    // Phản hồi khi sửa hồ sơ
                     else if ("UPDATE_PROFILE_RESPONSE".equalsIgnoreCase(action)) {
                         String status = msg.get("status").getAsString();
                         String message = msg.get("message").getAsString();

@@ -42,18 +42,18 @@ public class ChatInputPanel extends JPanel {
                 BorderFactory.createEmptyBorder(10, 14, 10, 14)));
         setBackground(Color.WHITE);
 
-        // Khung nút đính kèm (📎 và 🎙️)
+        // Nút đính kèm và nút ghi âm
         JPanel leftActionPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
         leftActionPanel.setOpaque(false);
 
         btnAttach.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 18));
-        btnAttach.setToolTipText("Đính kèm tệp, ảnh hoặc video (Module 4)");
+        btnAttach.setToolTipText("Đính kèm tệp, ảnh hoặc video");
         btnAttach.setFocusPainted(false);
         btnAttach.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btnAttach.setPreferredSize(new Dimension(40, 38));
 
         btnVoice.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 18));
-        btnVoice.setToolTipText("Ghi âm tin nhắn thoại (Module 4)");
+        btnVoice.setToolTipText("Ghi âm tin nhắn thoại");
         btnVoice.setFocusPainted(false);
         btnVoice.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btnVoice.setPreferredSize(new Dimension(40, 38));
@@ -68,7 +68,7 @@ public class ChatInputPanel extends JPanel {
                 BorderFactory.createLineBorder(new Color(205, 210, 218), 1, true),
                 BorderFactory.createEmptyBorder(8, 12, 8, 12)));
 
-        // Nút Gửi
+        // Nút gửi
         btnSend.setFont(new Font("Segoe UI", Font.BOLD, 13));
         btnSend.setBackground(new Color(0, 132, 255));
         btnSend.setForeground(Color.WHITE);
@@ -76,10 +76,10 @@ public class ChatInputPanel extends JPanel {
         btnSend.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btnSend.setPreferredSize(new Dimension(75, 38));
 
-        // Bắt sự kiện Click nút Gửi
+        // Bấm nút gửi
         btnSend.addActionListener(e -> triggerSend());
 
-        // Bắt sự kiện gõ phím Enter trên ô nhập
+        // Nhấn Enter trong ô nhập cũng gửi
         txtInput.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
@@ -89,10 +89,10 @@ public class ChatInputPanel extends JPanel {
             }
         });
 
-        // Xử lý nút Đính kèm (Menu xổ xuống chọn loại tệp)
+        // Nút đính kèm mở menu chọn loại tệp
         btnAttach.addActionListener(e -> showAttachMenu(btnAttach));
 
-        // Xử lý nút Ghi âm giọng nói
+        // Nút ghi âm
         btnVoice.addActionListener(e -> openVoiceRecordDialog());
 
         add(leftActionPanel, BorderLayout.WEST);
@@ -178,9 +178,7 @@ public class ChatInputPanel extends JPanel {
         btnVoice.setEnabled(enabled);
     }
 
-    /**
-     * Ẩn nút đính kèm và ghi âm (chat nhóm chỉ gửi tin nhắn chữ).
-     */
+    // Chat nhóm chỉ gửi tin chữ nên ẩn hai nút này
     public void hideMediaButtons() {
         btnAttach.setVisible(false);
         btnVoice.setVisible(false);

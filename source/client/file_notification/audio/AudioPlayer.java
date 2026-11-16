@@ -15,12 +15,9 @@ public class AudioPlayer {
         return instance;
     }
 
-    /**
-     * Phát một đoạn âm thanh dạng mảng byte WAV.
-     * Tự động dừng đoạn âm thanh đang phát trước đó nếu có.
-     */
+    // Phát dữ liệu WAV, nếu đang phát đoạn khác thì dừng đoạn đó trước
     public synchronized void play(byte[] wavBytes, Runnable onComplete) {
-        stop(); // Dừng bài cũ
+        stop(); // dừng đoạn đang phát
 
         if (wavBytes == null || wavBytes.length == 0) {
             if (onComplete != null) onComplete.run();
@@ -58,9 +55,7 @@ public class AudioPlayer {
         }
     }
 
-    /**
-     * Dừng ngay lập tức âm thanh đang phát.
-     */
+    // Dừng âm thanh đang phát
     public synchronized void stop() {
         if (activeClip != null) {
             try {

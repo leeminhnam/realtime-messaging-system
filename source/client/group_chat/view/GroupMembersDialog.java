@@ -62,9 +62,7 @@ public class GroupMembersDialog extends JDialog {
         updateButtons();
     }
 
-    /**
-     * Nạp lại danh sách thành viên do Server trả về.
-     */
+    // Nạp lại danh sách thành viên Server gửi về
     public void setMembers(String groupName, List<MemberItem> newMembers) {
         setTitle("Thành viên nhóm: " + groupName);
         members.clear();

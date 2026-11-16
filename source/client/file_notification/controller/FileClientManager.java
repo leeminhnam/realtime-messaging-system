@@ -19,7 +19,7 @@ public class FileClientManager {
     private static FileClientManager instance;
     private final Gson gson = new Gson();
 
-    // Bộ nhớ cache tạm thời lưu các file đã tải về (Key: fileId, Value: mảng byte)
+    // Cache các tệp đã tải: fileId -> dữ liệu
     private final Map<Integer, byte[]> fileCache = new ConcurrentHashMap<>();
 
     // Danh sách callback đang chờ dữ liệu của từng fileId
@@ -42,16 +42,14 @@ public class FileClientManager {
         return this.writer;
     }
 
-    /**
-     * Gửi một file từ đĩa lên Server.
-     */
+    // Gửi một tệp trên máy lên Server
     public boolean sendFile(PrintWriter writer, String receiver, File file, String fileType, int duration, String caption) {
         if (writer == null || file == null || !file.exists()) {
             return false;
         }
 
         try {
-            // Giới hạn kiểm tra dung lượng file (ví dụ: tối đa 20MB)
+            // Tối đa 20 MB vì cả tệp nằm trong một dòng JSON
             if (file.length() > 20 * 1024 * 1024) {
                 JOptionPane.showMessageDialog(null, "Dung lượng tệp vượt quá giới hạn 20MB!", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
                 return false;
@@ -65,9 +63,7 @@ public class FileClientManager {
         }
     }
 
-    /**
-     * Gửi mảng byte (ví dụ ảnh chụp hoặc audio ghi âm) lên Server.
-     */
+    // Gửi dữ liệu đã có trong bộ nhớ, ví dụ đoạn ghi âm
     public boolean sendBytes(PrintWriter writer, String receiver, byte[] bytes, String fileName, String fileType,
                              int duration, String caption) {
         if (writer == null || bytes == null || bytes.length == 0) {
@@ -97,21 +93,16 @@ public class FileClientManager {
         }
     }
 
-    /**
-     * Yêu cầu Server tải dữ liệu file theo fileId (sử dụng writer mặc định).
-     */
+    // Tải tệp theo fileId, dùng writer mặc định
     public void getFileData(int fileId, Consumer<byte[]> callback) {
         getFileData(this.writer, fileId, callback);
     }
 
-    /**
-     * Yêu cầu Server tải dữ liệu file theo fileId.
-     * Nếu trong Cache đã có, gọi callback ngay lập tức.
-     */
+    // Có trong cache thì trả luôn, chưa có thì gửi DOWNLOAD_FILE
     public void getFileData(PrintWriter writer, int fileId, Consumer<byte[]> callback) {
         if (fileId <= 0) return;
 
-        // Nếu đã cache trong bộ nhớ
+        // Đã có trong cache
         byte[] cached = fileCache.get(fileId);
         if (cached != null) {
             if (callback != null) {
@@ -120,10 +111,10 @@ public class FileClientManager {
             return;
         }
 
-        // Đăng ký callback
+        // Thêm callback vào danh sách chờ
         downloadListeners.computeIfAbsent(fileId, k -> Collections.synchronizedList(new ArrayList<>())).add(callback);
 
-        // Gửi yêu cầu tải lên Server nếu đây là listener đầu tiên cho fileId này
+        // Chỉ callback đầu tiên mới gửi yêu cầu, tránh tải một tệp nhiều lần
         if (downloadListeners.get(fileId).size() == 1 && writer != null) {
             JsonObject req = new JsonObject();
             req.addProperty("action", "DOWNLOAD_FILE");
@@ -134,9 +125,7 @@ public class FileClientManager {
         }
     }
 
-    /**
-     * Xử lý gói tin DOWNLOAD_FILE_RESPONSE từ Server.
-     */
+    // Nhận DOWNLOAD_FILE_RESPONSE
     public void onDownloadResponse(JsonObject resData) {
         if (resData == null || !resData.has("fileId") || !resData.has("base64Data")) {
             return;
@@ -150,7 +139,7 @@ public class FileClientManager {
             // Lưu vào cache
             fileCache.put(fileId, fileBytes);
 
-            // Đánh thức tất cả các View đang chờ dữ liệu của fileId này
+            // Gọi lại mọi chỗ đang chờ tệp này
             List<Consumer<byte[]>> callbacks = downloadListeners.remove(fileId);
             if (callbacks != null) {
                 for (Consumer<byte[]> cb : callbacks) {
@@ -164,18 +153,14 @@ public class FileClientManager {
         }
     }
 
-    /**
-     * Lưu thủ công một file vào cache (dùng khi vừa gửi file thành công).
-     */
+    // Tệp mình vừa gửi thì cho luôn vào cache, khỏi tải lại
     public void cacheFileBytes(int fileId, byte[] bytes) {
         if (fileId > 0 && bytes != null) {
             fileCache.put(fileId, bytes);
         }
     }
 
-    /**
-     * Hộp thoại lưu file về máy tính người dùng.
-     */
+    // Lưu tệp về máy
     public void saveFileToDisk(Component parent, String fileName, byte[] data) {
         if (data == null || data.length == 0) {
             JOptionPane.showMessageDialog(parent, "Dữ liệu tệp chưa sẵn sàng hoặc rỗng!", "Lỗi", JOptionPane.ERROR_MESSAGE);
@@ -197,9 +182,7 @@ public class FileClientManager {
         }
     }
 
-    /**
-     * Mở video bằng trình phát video mặc định của hệ điều hành (Windows Media Player, Movies & TV, VLC...).
-     */
+    // Mở video bằng trình phát mặc định của hệ điều hành
     public void openVideo(Component parent, String fileName, byte[] data) {
         if (data == null || data.length == 0) {
             JOptionPane.showMessageDialog(parent, "Dữ liệu video chưa sẵn sàng!", "Lỗi", JOptionPane.ERROR_MESSAGE);
@@ -207,7 +190,7 @@ public class FileClientManager {
         }
 
         try {
-            // Lưu ra file tạm trong thư mục temp của hệ thống
+            // Ghi ra tệp tạm trước
             String cleanName = fileName != null ? fileName.replaceAll("[^a-zA-Z0-9._-]", "_") : "video.mp4";
             File tempVideo = File.createTempFile("chat_video_", "_" + cleanName);
             tempVideo.deleteOnExit();
@@ -216,7 +199,7 @@ public class FileClientManager {
                 fos.write(data);
             }
 
-            // Gọi chương trình mặc định của hệ điều hành để phát video
+            // Mở bằng chương trình mặc định để phát
             if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN)) {
                 Desktop.getDesktop().open(tempVideo);
             } else {

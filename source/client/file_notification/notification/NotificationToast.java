@@ -20,7 +20,7 @@ public class NotificationToast extends JWindow {
     public static synchronized void showNotification(JFrame parent, String type, String senderUsername,
                                                       String senderFullName, String message,
                                                       NotificationClickListener listener) {
-        // Đóng toast cũ nếu đang mở
+        // Đóng thông báo cũ nếu còn
         if (activeToast != null) {
             activeToast.dispose();
             activeToast = null;
@@ -29,7 +29,7 @@ public class NotificationToast extends JWindow {
         activeToast = new NotificationToast(parent, type, senderUsername, senderFullName, message, listener);
         activeToast.setVisible(true);
 
-        // Phát âm thanh thông báo dịu nhẹ
+        // Phát âm báo
         playChimeSound();
     }
 
@@ -39,7 +39,7 @@ public class NotificationToast extends JWindow {
 
         setSize(320, 85);
 
-        // Đặt vị trí góc dưới bên phải màn hình
+        // Góc dưới bên phải màn hình
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         Rectangle screenRect = ge.getMaximumWindowBounds();
         int x = screenRect.x + screenRect.width - getWidth() - 20;
@@ -64,7 +64,7 @@ public class NotificationToast extends JWindow {
         panel.setBorder(BorderFactory.createEmptyBorder(10, 14, 10, 14));
         panel.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        // Icon đại diện loại thông báo
+        // Icon theo loại thông báo
         String iconText;
         switch (type != null ? type.toUpperCase() : "TEXT") {
             case "IMAGE":
@@ -111,7 +111,7 @@ public class NotificationToast extends JWindow {
         panel.add(lblIcon, BorderLayout.WEST);
         panel.add(textPanel, BorderLayout.CENTER);
 
-        // Nút tắt nhỏ
+        // Nút đóng
         JLabel lblClose = new JLabel("✕");
         lblClose.setFont(new Font("Segoe UI", Font.BOLD, 12));
         lblClose.setForeground(new Color(160, 160, 160));
@@ -126,7 +126,7 @@ public class NotificationToast extends JWindow {
 
         setContentPane(panel);
 
-        // Nhấn vào thông báo để chuyển ngay tới cuộc trò chuyện
+        // Bấm vào thì mở hội thoại
         panel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -137,15 +137,13 @@ public class NotificationToast extends JWindow {
             }
         });
 
-        // Tự động đóng sau 4.5 giây
+        // Tự đóng sau 4,5 giây
         Timer autoCloseTimer = new Timer(4500, e -> dispose());
         autoCloseTimer.setRepeats(false);
         autoCloseTimer.start();
     }
 
-    /**
-     * Tiện ích phát âm thanh thông báo dạng chuông tinh tế sử dụng Java Sound.
-     */
+    // Âm báo tự tạo bằng Java Sound, không cần tệp âm thanh
     private static void playChimeSound() {
         new Thread(() -> {
             try {
@@ -154,7 +152,7 @@ public class NotificationToast extends JWindow {
                 line.open(format);
                 line.start();
 
-                // Tạo 2 nốt nhạc ngắn tạo âm thanh "Ding-Dong" êm ái
+                // Hai nốt ngắn kiểu ding-dong
                 byte[] ding = generateTone(880, 70, 44100);
                 byte[] dong = generateTone(1174, 110, 44100);
 
@@ -164,7 +162,7 @@ public class NotificationToast extends JWindow {
                 line.stop();
                 line.close();
             } catch (Exception e) {
-                // Fallback nếu máy tính không hỗ trợ SourceDataLine
+                // Không mở được SourceDataLine thì kêu beep
                 Toolkit.getDefaultToolkit().beep();
             }
         }).start();
@@ -175,7 +173,7 @@ public class NotificationToast extends JWindow {
         byte[] sin = new byte[length];
         for (int i = 0; i < length; i++) {
             double angle = 2.0 * Math.PI * i / (sampleRate / (double) freq);
-            // Giảm dần âm lượng để không bị chói tai (fade out)
+            // Giảm dần âm lượng cuối nốt cho đỡ chói
             double decay = 1.0 - ((double) i / length);
             sin[i] = (byte) (Math.sin(angle) * 70 * decay);
         }

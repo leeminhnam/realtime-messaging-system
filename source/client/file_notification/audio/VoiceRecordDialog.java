@@ -39,14 +39,14 @@ public class VoiceRecordDialog extends JDialog {
         contentPane.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         contentPane.setBackground(Color.WHITE);
 
-        // Center Panel: Icon mic, Trạng thái, Bộ đếm thời gian
+        // Giữa: icon mic, trạng thái và thời gian ghi
         JPanel centerPanel = new JPanel();
         centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
         centerPanel.setBackground(Color.WHITE);
 
         lblStatus = new JLabel("🔴 Đang ghi âm...");
         lblStatus.setFont(new Font("Segoe UI", Font.BOLD, 15));
-        lblStatus.setForeground(new Color(220, 53, 69)); // Đỏ nổi bật
+        lblStatus.setForeground(new Color(220, 53, 69)); // đỏ
         lblStatus.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         lblTimer = new JLabel("00:00");
@@ -60,7 +60,7 @@ public class VoiceRecordDialog extends JDialog {
         centerPanel.add(lblTimer);
         centerPanel.add(Box.createVerticalGlue());
 
-        // Bottom Panel: Các nút điều khiển
+        // Dưới: các nút điều khiển
         JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
         bottomPanel.setBackground(Color.WHITE);
 
@@ -89,7 +89,7 @@ public class VoiceRecordDialog extends JDialog {
 
         setContentPane(contentPane);
 
-        // Xử lý sự kiện các nút
+        // Sự kiện các nút
         btnStopAndSend.addActionListener(e -> {
             if (recorder.isRecording()) {
                 stopRecording();
@@ -144,7 +144,7 @@ public class VoiceRecordDialog extends JDialog {
         if (timer != null) timer.stop();
         recordedBytes = recorder.stopRecording();
         lblStatus.setText("Đã hoàn tất ghi âm");
-        lblStatus.setForeground(new Color(40, 167, 69)); // Xanh lá
+        lblStatus.setForeground(new Color(40, 167, 69)); // xanh lá
         btnStopAndSend.setText("Gửi đoạn ghi âm");
         btnPreview.setEnabled(true);
     }

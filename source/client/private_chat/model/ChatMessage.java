@@ -28,14 +28,7 @@ public class ChatMessage {
         this.isRead = isRead;
     }
 
-    /**
-     * Tiện ích parse từ JsonObject do Server trả về thành đối tượng ChatMessage.
-     * Tự động xác định cờ isMine dựa vào currentUsername.
-     *
-     * @param json            Gói tin JSON từ Server
-     * @param currentUsername Tên tài khoản của người dùng trên Client này
-     * @return Đối tượng ChatMessage
-     */
+    // Đổi JSON Server trả về thành ChatMessage, isMine tính theo currentUsername
     public static ChatMessage fromJson(JsonObject json, String currentUsername) {
         if (json == null) {
             return null;
@@ -67,29 +60,25 @@ public class ChatMessage {
         boolean isMine = sender.equalsIgnoreCase(currentUsername);
 
         ChatMessage msg = new ChatMessage(id, convId, sender, receiver, content, sentAt, isMine, isRead);
-        // Họ tên người gửi (chỉ có trong tin nhắn nhóm)
+        // Họ tên người gửi, chỉ tin nhắn nhóm mới có
         if (json.has("senderFullName") && !json.get("senderFullName").isJsonNull()) {
             msg.senderName = json.get("senderFullName").getAsString();
         }
         return msg;
     }
 
-    /**
-     * Tên hiển thị của người gửi: ưu tiên họ tên, không có thì dùng username.
-     */
+    // Ưu tiên họ tên, không có thì dùng username
     public String getSenderName() {
         return senderName != null && !senderName.isEmpty() ? senderName : sender;
     }
 
-    /**
-     * Lấy giờ:phút ngắn gọn từ sentAt để hiển thị chân bóng chat (VD: "15:30").
-     */
+    // Chỉ lấy giờ:phút, ví dụ 15:30
     public String getFormattedTime() {
         if (sentAt == null || sentAt.trim().isEmpty()) {
             return "";
         }
         try {
-            // Định dạng chuỗi "yyyy-MM-dd HH:mm:ss"
+            // sentAt có dạng yyyy-MM-dd HH:mm:ss
             if (sentAt.contains(" ") && sentAt.length() >= 16) {
                 return sentAt.substring(11, 16);
             }

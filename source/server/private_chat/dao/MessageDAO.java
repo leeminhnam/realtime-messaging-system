@@ -10,15 +10,7 @@ import java.util.List;
 
 public class MessageDAO {
 
-    /**
-     * Lưu một tin nhắn mới vào đoạn chat.
-     * Tự động cập nhật thời gian hoạt động (updated_at) của đoạn chat.
-     *
-     * @param conversationId ID của đoạn chat
-     * @param senderUsername Tên người gửi
-     * @param content        Nội dung tin nhắn
-     * @return Đối tượng Message đầy đủ (kèm id và sentAt)
-     */
+    // Lưu tin và cập nhật updated_at của hội thoại
     public static Message saveMessage(int conversationId, String senderUsername, String content) {
         String insertSQL = "INSERT INTO messages(conversation_id, sender_username, content, sent_at) "
                 + "VALUES(?, ?, ?, datetime('now', 'localtime'))";
@@ -36,7 +28,7 @@ public class MessageDAO {
                     if (rs.next()) {
                         int generatedId = rs.getInt(1);
 
-                        // Cập nhật thời gian hoạt động của conversation
+                        // Cập nhật updated_at của conversation
                         ConversationDAO.updateLastActivity(conversationId);
 
                         return getMessageById(generatedId);
@@ -50,9 +42,7 @@ public class MessageDAO {
         return null;
     }
 
-    /**
-     * Lấy thông tin một tin nhắn theo ID.
-     */
+    // Lấy tin nhắn theo id
     public static Message getMessageById(int id) {
         String sql = "SELECT id, conversation_id, sender_username, content, sent_at, is_read "
                 + "FROM messages WHERE id = ?";
@@ -78,14 +68,7 @@ public class MessageDAO {
         return null;
     }
 
-    /**
-     * Lấy danh sách tin nhắn của một đoạn chat theo conversationId.
-     * Lấy N tin mới nhất và sắp xếp theo thứ tự thời gian tăng dần (cũ -> mới).
-     *
-     * @param conversationId ID đoạn chat
-     * @param limit          Số lượng tin nhắn tối đa
-     * @return Danh sách tin nhắn
-     */
+    // Lấy N tin mới nhất, trả về theo thứ tự cũ đến mới
     public static List<Message> getMessagesByConversationId(int conversationId, int limit) {
         List<Message> list = new ArrayList<>();
 
@@ -120,9 +103,7 @@ public class MessageDAO {
         return list;
     }
 
-    /**
-     * Tiện ích lấy lịch sử chat giữa 2 người dùng (tự tìm hoặc tạo conversation tương ứng).
-     */
+    // Lịch sử giữa hai người, chưa có hội thoại thì tạo
     public static List<Message> getMessagesBetweenUsers(String userA, String userB, int limit) {
         Conversation conv = ConversationDAO.getOrCreateConversation(userA, userB);
         if (conv == null) {
@@ -131,12 +112,7 @@ public class MessageDAO {
         return getMessagesByConversationId(conv.getId(), limit);
     }
 
-    /**
-     * Đánh dấu tất cả tin nhắn trong đoạn chat mà đối phương gửi cho tôi là ĐÃ ĐỌC.
-     *
-     * @param conversationId ID đoạn chat
-     * @param readerUsername Người đang đọc tin (chỉ đánh dấu tin do người khác gửi)
-     */
+    // Chỉ đánh dấu tin do người kia gửi
     public static int markMessagesAsRead(int conversationId, String readerUsername) {
         String sql = "UPDATE messages SET is_read = 1 "
                 + "WHERE conversation_id = ? AND sender_username != ? AND is_read = 0";
@@ -153,9 +129,7 @@ public class MessageDAO {
         }
     }
 
-    /**
-     * Đếm số lượng tin nhắn chưa đọc trong đoạn chat mà người khác gửi cho tôi.
-     */
+    // Đếm tin chưa đọc do người kia gửi
     public static int getUnreadCount(int conversationId, String readerUsername) {
         String sql = "SELECT COUNT(*) FROM messages "
                 + "WHERE conversation_id = ? AND sender_username != ? AND is_read = 0";

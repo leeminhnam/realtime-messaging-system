@@ -24,7 +24,7 @@ public class MessageListPanel extends JPanel {
         contentPanel.setBackground(new Color(250, 250, 252));
         contentPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Bao quanh bằng JScrollPane
+        // Bọc trong JScrollPane
         scrollPane = new JScrollPane(contentPanel);
         scrollPane.setBorder(null);
         scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
@@ -34,9 +34,7 @@ public class MessageListPanel extends JPanel {
         add(scrollPane, BorderLayout.CENTER);
     }
 
-    /**
-     * Thêm một tin nhắn mới vào cuối cuộc trò chuyện và tự động cuộn xuống dưới cùng.
-     */
+    // Thêm tin vào cuối rồi cuộn xuống
     public void addMessage(ChatMessage msg) {
         contentPanel.add(new MessageBubblePanel(msg, showSenderName));
         contentPanel.revalidate();
@@ -44,9 +42,7 @@ public class MessageListPanel extends JPanel {
         scrollToBottom();
     }
 
-    /**
-     * Tải toàn bộ danh sách lịch sử tin nhắn.
-     */
+    // Nạp toàn bộ lịch sử tin nhắn
     public void setMessages(List<ChatMessage> messages) {
         contentPanel.removeAll();
         if (messages != null) {
@@ -59,18 +55,14 @@ public class MessageListPanel extends JPanel {
         scrollToBottom();
     }
 
-    /**
-     * Xóa sạch các bong bóng tin nhắn.
-     */
+    // Xóa hết bong bóng tin nhắn
     public void clearMessages() {
         contentPanel.removeAll();
         contentPanel.revalidate();
         contentPanel.repaint();
     }
 
-    /**
-     * Tự động cuộn thanh cuộn xuống tin nhắn mới nhất ở đáy.
-     */
+    // Cuộn sau khi layout xong, nếu không sẽ chưa xuống hết
     public void scrollToBottom() {
         SwingUtilities.invokeLater(() -> {
             JScrollBar vertical = scrollPane.getVerticalScrollBar();

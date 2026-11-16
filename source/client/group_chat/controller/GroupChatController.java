@@ -45,22 +45,20 @@ public class GroupChatController {
     }
 
     private void initEventHandlers() {
-        // 1. Chọn một nhóm trong danh sách -> mở khung chat nhóm
+        // Chọn một nhóm trong danh sách -> mở khung chat nhóm
         listView.setGroupSelectListener(this::openGroup);
 
-        // 2. Bấm nút tạo nhóm mới
+        // Bấm nút tạo nhóm mới
         listView.setCreateListener(this::showCreateDialog);
 
-        // 3. Bấm nút xem thành viên ở header
+        // Bấm nút xem thành viên ở header
         chatView.setMembersListener(this::showMembersDialog);
 
-        // 4. Gõ tin nhắn rồi gửi
+        // Gõ tin nhắn rồi gửi
         chatView.getInputPanel().setSendMessageListener(this::sendGroupMessage);
     }
 
-    /**
-     * Kiểm tra xem gói tin từ Server có thuộc module Group Chat không.
-     */
+    // Gói này có phải của chat nhóm không
     public static boolean isGroupAction(String action) {
         return "CREATE_GROUP_RESPONSE".equalsIgnoreCase(action)
                 || "GET_MY_GROUPS_RESPONSE".equalsIgnoreCase(action)
@@ -75,9 +73,7 @@ public class GroupChatController {
                 || "GROUP_UPDATED".equalsIgnoreCase(action);
     }
 
-    /**
-     * Xử lý mọi gói tin của Module Group Chat do Server gửi về (luôn chạy trên luồng giao diện).
-     */
+    // Xử lý các gói chat nhóm, hàm này luôn được gọi trên luồng giao diện
     public void handleServerMessage(JsonObject msg) {
         String action = msg.get("action").getAsString();
         boolean success = msg.has("status") && "SUCCESS".equalsIgnoreCase(msg.get("status").getAsString());
@@ -90,7 +86,7 @@ public class GroupChatController {
                     if (success) onGroupsReceived(data);
                     break;
                 case "GROUP_UPDATED":
-                    loadGroups(); // Nhóm có thay đổi -> tải lại danh sách
+                    loadGroups(); // nhóm thay đổi thì tải lại danh sách
                     break;
                 case "GET_GROUP_MEMBERS_RESPONSE":
                     if (success) onMembersReceived(data);
@@ -117,9 +113,8 @@ public class GroupChatController {
         });
     }
 
-    // ===================== GỬI YÊU CẦU LÊN SERVER =====================
-
-    // Đóng gói và gửi một yêu cầu JSON lên Server
+    // ---- Gửi yêu cầu ----
+    // Đóng gói rồi gửi một yêu cầu JSON lên Server
     private void sendRequest(String action, JsonObject data) {
         JsonObject req = new JsonObject();
         req.addProperty("action", action);
@@ -165,8 +160,7 @@ public class GroupChatController {
         sendRequest("GET_GROUP_MEMBERS", data);
     }
 
-    // ===================== CÁC HỘP THOẠI / THAO TÁC NGƯỜI DÙNG =====================
-
+    // ---- Hộp thoại ----
     // Mở hộp thoại chọn tên nhóm + thành viên rồi gửi yêu cầu tạo nhóm
     private void showCreateDialog() {
         CreateGroupDialog dialog = new CreateGroupDialog(parent, userListPanel.getUsers(), (name, members) -> {
@@ -295,8 +289,7 @@ public class GroupChatController {
         JOptionPane.showMessageDialog(parent, message, "Lỗi", JOptionPane.ERROR_MESSAGE);
     }
 
-    // ===================== XỬ LÝ DỮ LIỆU SERVER TRẢ VỀ =====================
-
+    // ---- Xử lý gói Server trả về ----
     // Nhận danh sách nhóm: cập nhật danh sách, header; nếu mình không còn trong nhóm đang mở thì đóng lại
     private void onGroupsReceived(JsonObject data) {
         List<GroupItem> groups = new ArrayList<>();

@@ -14,11 +14,7 @@ public class GroupMessageDAO {
             + "m.content, m.sent_at FROM group_messages m "
             + "LEFT JOIN users u ON u.username = m.sender_username ";
 
-    /**
-     * Lưu một tin nhắn nhóm mới vào CSDL.
-     *
-     * @return Tin nhắn vừa lưu (có id và sentAt), null nếu lỗi
-     */
+    // Trả về tin vừa lưu (đã có id, sentAt), lỗi thì null
     public static GroupMessage saveMessage(int groupId, String senderUsername, String content) {
         String sql = "INSERT INTO group_messages(group_id, sender_username, content, sent_at) "
                 + "VALUES(?, ?, ?, datetime('now', 'localtime'))";
@@ -42,9 +38,7 @@ public class GroupMessageDAO {
         return null;
     }
 
-    /**
-     * Lấy một tin nhắn nhóm theo id.
-     */
+    // Lấy tin nhắn nhóm theo id
     public static GroupMessage getMessageById(int id) {
         try (Connection conn = DatabaseManager.getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(SELECT_MESSAGE + "WHERE m.id = ?")) {
@@ -61,9 +55,7 @@ public class GroupMessageDAO {
         return null;
     }
 
-    /**
-     * Lấy lịch sử N tin nhắn mới nhất của nhóm, sắp xếp từ cũ đến mới.
-     */
+    // Lấy N tin mới nhất rồi đảo lại thành cũ đến mới
     public static List<GroupMessage> getHistory(int groupId, int limit) {
         List<GroupMessage> list = new ArrayList<>();
         String sql = "SELECT * FROM (" + SELECT_MESSAGE
@@ -85,7 +77,7 @@ public class GroupMessageDAO {
         return list;
     }
 
-    // Đọc một dòng kết quả thành đối tượng GroupMessage
+    // Đọc một dòng thành GroupMessage
     private static GroupMessage readMessage(ResultSet rs) throws SQLException {
         String sender = rs.getString("sender_username");
         String fullName = rs.getString("full_name");

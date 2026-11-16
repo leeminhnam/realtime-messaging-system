@@ -6,7 +6,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 public class AudioRecorder {
-    // Định dạng âm thanh chuẩn: 16kHz, 16 bit, Mono (1 kênh)
+    // 16 kHz, 16 bit, mono: đủ nghe rõ giọng nói mà tệp nhỏ
     private static final AudioFormat FORMAT = new AudioFormat(16000.0f, 16, 1, true, false);
 
     private TargetDataLine targetLine;
@@ -16,9 +16,7 @@ public class AudioRecorder {
     private long startTime;
     private long endTime;
 
-    /**
-     * Bắt đầu ghi âm từ Microphone của máy tính.
-     */
+    // Bắt đầu ghi âm từ micro
     public synchronized void startRecording() throws LineUnavailableException {
         if (recording) return;
 
@@ -47,9 +45,7 @@ public class AudioRecorder {
         recordingThread.start();
     }
 
-    /**
-     * Dừng ghi âm và trả về mảng byte file .WAV hoàn chỉnh (đã bao gồm RIFF header).
-     */
+    // Dừng ghi và trả về dữ liệu WAV (đã có header)
     public synchronized byte[] stopRecording() {
         if (!recording) return null;
 
@@ -72,9 +68,7 @@ public class AudioRecorder {
         return convertPcmToWav(pcmData);
     }
 
-    /**
-     * Hủy bỏ quá trình ghi âm mà không lưu dữ liệu.
-     */
+    // Hủy ghi âm, không giữ lại dữ liệu
     public synchronized void cancelRecording() {
         if (!recording) return;
 
@@ -96,9 +90,7 @@ public class AudioRecorder {
         return (int) Math.max(1, (end - startTime) / 1000);
     }
 
-    /**
-     * Tiện ích đóng gói dữ liệu PCM thô thành file WAV chuẩn RIFF.
-     */
+    // Thêm header RIFF để dữ liệu PCM thành tệp WAV
     private byte[] convertPcmToWav(byte[] pcmData) {
         ByteArrayInputStream bais = new ByteArrayInputStream(pcmData);
         AudioInputStream audioStream = new AudioInputStream(bais, FORMAT, pcmData.length / FORMAT.getFrameSize());

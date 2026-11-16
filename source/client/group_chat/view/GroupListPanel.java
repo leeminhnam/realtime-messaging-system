@@ -59,9 +59,7 @@ public class GroupListPanel extends JPanel {
         btnCreate.addActionListener(e -> listener.run());
     }
 
-    /**
-     * Nạp lại danh sách nhóm và giữ nguyên nhóm đang được chọn (selectedId).
-     */
+    // Nạp lại danh sách nhưng vẫn giữ nhóm đang chọn
     public void setGroups(List<GroupItem> groups, int selectedId) {
         updating = true;
         listModel.clear();
@@ -74,9 +72,7 @@ public class GroupListPanel extends JPanel {
         updating = false;
     }
 
-    /**
-     * Tăng số tin nhắn chưa xem của một nhóm (khi có tin mới mà đang không mở nhóm đó).
-     */
+    // Có tin mới ở nhóm đang không mở
     public void addUnread(int groupId) {
         unreadMap.merge(groupId, 1, Integer::sum);
         groupJList.repaint();

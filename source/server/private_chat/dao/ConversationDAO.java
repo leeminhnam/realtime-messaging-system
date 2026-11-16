@@ -9,15 +9,7 @@ import java.util.List;
 
 public class ConversationDAO {
 
-    /**
-     * Tìm đoạn chat giữa 2 người dùng. Nếu chưa tồn tại thì tự động tạo mới.
-     * Quy chuẩn: Sắp xếp username theo thứ tự alphabet để đảm bảo 1 cặp user
-     * luôn chỉ có duy nhất 1 bản ghi Conversation trong CSDL.
-     *
-     * @param userA Người dùng A
-     * @param userB Người dùng B
-     * @return Đối tượng Conversation
-     */
+    // Mỗi cặp người dùng chỉ có một hội thoại: sắp xếp hai username trước khi tìm
     public static Conversation getOrCreateConversation(String userA, String userB) {
         if (userA == null || userB == null || userA.trim().isEmpty() || userB.trim().isEmpty()
                 || userA.trim().equalsIgnoreCase(userB.trim())) {
@@ -28,11 +20,11 @@ public class ConversationDAO {
         userA = userA.trim();
         userB = userB.trim();
 
-        // Chuẩn hóa thứ tự (user1 luôn đứng trước user2 theo alphabet)
+        // user1 luôn đứng trước user2 theo alphabet
         String u1 = userA.compareToIgnoreCase(userB) <= 0 ? userA : userB;
         String u2 = userA.compareToIgnoreCase(userB) <= 0 ? userB : userA;
 
-        // 1. Kiểm tra xem đoạn chat đã tồn tại chưa
+        // Xem đoạn chat đã có chưa
         String findSQL = "SELECT id, user1_username, user2_username, created_at, updated_at "
                 + "FROM conversations WHERE (user1_username = ? AND user2_username = ?) "
                 + "   OR (user1_username = ? AND user2_username = ?)";
@@ -56,7 +48,7 @@ public class ConversationDAO {
                 }
             }
 
-            // 2. Nếu chưa có thì tạo mới
+            // Chưa có thì tạo
             String insertSQL = "INSERT INTO conversations(user1_username, user2_username, created_at, updated_at) "
                     + "VALUES(?, ?, datetime('now', 'localtime'), datetime('now', 'localtime'))";
 
@@ -80,7 +72,7 @@ public class ConversationDAO {
                 System.err.println("[ConversationDAO] Insert đoạn chat gặp lỗi, thử tìm lại: " + insertEx.getMessage());
             }
 
-            // Fallback: Tìm lại một lần nữa phòng trường hợp luồng khác vừa tạo xong
+            // Có thể luồng khác vừa tạo xong, tìm lại lần nữa
             try (PreparedStatement pstmt = conn.prepareStatement(findSQL)) {
                 pstmt.setString(1, u1);
                 pstmt.setString(2, u2);
@@ -106,9 +98,7 @@ public class ConversationDAO {
         return null;
     }
 
-    /**
-     * Lấy thông tin đoạn chat theo ID.
-     */
+    // Lấy đoạn chat theo id
     public static Conversation getConversationById(int id) {
         String sql = "SELECT id, user1_username, user2_username, created_at, updated_at "
                 + "FROM conversations WHERE id = ?";
@@ -133,9 +123,7 @@ public class ConversationDAO {
         return null;
     }
 
-    /**
-     * Cập nhật thời gian hoạt động mới nhất của đoạn chat (khi có tin nhắn mới).
-     */
+    // Gọi mỗi khi có tin nhắn mới
     public static void updateLastActivity(int conversationId) {
         String sql = "UPDATE conversations SET updated_at = datetime('now', 'localtime') WHERE id = ?";
         try (Connection conn = DatabaseManager.getConnection();
@@ -147,9 +135,7 @@ public class ConversationDAO {
         }
     }
 
-    /**
-     * Lấy tất cả các đoạn chat mà một user tham gia (sắp xếp theo thời gian mới nhất lên đầu).
-     */
+    // Hội thoại mới nhất lên đầu
     public static List<Conversation> getUserConversations(String username) {
         List<Conversation> list = new ArrayList<>();
         String sql = "SELECT id, user1_username, user2_username, created_at, updated_at "

@@ -7,9 +7,7 @@ import java.sql.*;
 
 public class FileAttachmentDAO {
 
-    /**
-     * Lưu thông tin một tệp đính kèm vào CSDL.
-     */
+    // Lưu thông tin tệp đính kèm vào CSDL
     public static FileAttachment saveFileAttachment(int conversationId, int messageId, String sender, String receiver,
                                                     String fileName, String fileType, long fileSize, String storedPath) {
         String insertSQL = "INSERT INTO file_attachments(conversation_id, message_id, sender_username, "
@@ -44,9 +42,7 @@ public class FileAttachmentDAO {
         return null;
     }
 
-    /**
-     * Lấy tệp đính kèm theo ID.
-     */
+    // Lấy tệp đính kèm theo id
     public static FileAttachment getFileAttachmentById(int id) {
         String sql = "SELECT id, conversation_id, message_id, sender_username, receiver_username, "
                 + "file_name, file_type, file_size, stored_path, created_at "
@@ -78,9 +74,7 @@ public class FileAttachmentDAO {
         return null;
     }
 
-    /**
-     * Cập nhật messageId cho tệp đính kèm sau khi Message đã được tạo.
-     */
+    // Tệp được lưu trước tin nhắn nên phải gắn messageId sau
     public static void updateMessageId(int fileId, int messageId) {
         String sql = "UPDATE file_attachments SET message_id = ? WHERE id = ?";
         try (Connection conn = DatabaseManager.getConnection();

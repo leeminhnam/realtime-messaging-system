@@ -64,7 +64,7 @@ public class UserListPanel extends JPanel {
         }
     }
 
-    // Cập nhật trạng thái chấm Online/Offline thời gian thực
+    // Đổi chấm trạng thái khi nhận USER_STATUS_CHANGE
     public void updateUserStatus(String username, String status, String fullName) {
         UserItem item = userMap.get(username.toLowerCase());
         if (item != null) {
@@ -75,7 +75,7 @@ public class UserListPanel extends JPanel {
             }
             userJList.repaint();
         } else if ("ONLINE".equalsIgnoreCase(status) && !username.equalsIgnoreCase(currentUsername)) {
-            // User mới đăng ký và vừa đăng nhập, tự động thêm mới vào danh bạ
+            // Người mới đăng ký chưa có trong danh bạ thì thêm vào
             String displayName = (fullName != null && !fullName.isEmpty()) ? fullName : username;
             UserItem newItem = new UserItem(username, displayName, status);
             userMap.put(username.toLowerCase(), newItem);
@@ -87,9 +87,7 @@ public class UserListPanel extends JPanel {
         updateUserStatus(username, status, null);
     }
 
-    /**
-     * Chọn nhanh một người dùng trong danh bạ theo username (dùng khi click thông báo toast).
-     */
+    // Chọn người dùng theo username, dùng khi bấm vào thông báo
     public void selectUser(String username) {
         if (username == null) return;
         UserItem item = userMap.get(username.toLowerCase());
@@ -98,14 +96,12 @@ public class UserListPanel extends JPanel {
         }
     }
 
-    /**
-     * Lấy danh sách tất cả người dùng đang có trong danh bạ (dùng khi tạo nhóm / thêm thành viên nhóm).
-     */
+    // Danh bạ hiện tại, dùng khi tạo nhóm hoặc thêm thành viên
     public java.util.List<UserItem> getUsers() {
         return java.util.Collections.list(listModel.elements());
     }
 
-    // Model dữ liệu từng item
+    // Một dòng trong danh bạ
     public static class UserItem {
         private final String username;
         private final String fullName;
@@ -134,16 +130,16 @@ public class UserListPanel extends JPanel {
         }
     }
 
-    // Custom Renderer hiển thị chấm Xanh (ONLINE) / Xám (OFFLINE)
+    // Vẽ chấm xanh cho người online, xám cho người offline
     private static class UserCellRenderer extends JPanel implements ListCellRenderer<UserItem> {
         private final JLabel lblName = new JLabel();
         private final JLabel lblStatusDot = new JLabel("● ");
 
         public UserCellRenderer() {
             setLayout(new BorderLayout(5, 0));
-            setBorder(BorderFactory.createEmptyBorder(8, 10, 8, 10)); // Tăng padding dòng cho thoáng
+            setBorder(BorderFactory.createEmptyBorder(8, 10, 8, 10)); // padding cho thoáng
 
-            // Tăng kích thước chấm tròn trạng thái
+            // Chấm to hơn một chút cho dễ nhìn
             lblStatusDot.setFont(new Font("Segoe UI", Font.BOLD, 18));
 
             add(lblStatusDot, BorderLayout.WEST);
@@ -157,9 +153,9 @@ public class UserListPanel extends JPanel {
             lblName.setFont(new Font("Segoe UI", Font.PLAIN, 13));
 
             if ("ONLINE".equalsIgnoreCase(value.getStatus())) {
-                lblStatusDot.setForeground(new Color(40, 167, 69)); // Xanh lá nổi bật hơn
+                lblStatusDot.setForeground(new Color(40, 167, 69)); // xanh lá
             } else {
-                lblStatusDot.setForeground(new Color(160, 160, 160)); // Xám
+                lblStatusDot.setForeground(new Color(160, 160, 160)); // xám
             }
 
             if (isSelected) {

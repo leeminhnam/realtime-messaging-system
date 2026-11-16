@@ -14,7 +14,7 @@ public class MediaContent {
     private String fileType; // IMAGE, AUDIO, VIDEO, FILE
     private String fileName;
     private long fileSize;
-    private int duration; // Thời lượng tính bằng giây (đối với Voice Note / Video)
+    private int duration; // số giây, dùng cho ghi âm và video
     private String caption;
 
     public MediaContent() {
@@ -30,10 +30,7 @@ public class MediaContent {
         this.caption = caption != null ? caption : "";
     }
 
-    /**
-     * Phân tích chuỗi content xem có phải là thông tin tệp/media (Module 4) không.
-     * Nếu đúng trả về MediaContent, nếu là text thông thường trả về null.
-     */
+    // content là JSON mô tả tệp thì trả về MediaContent, tin chữ thì trả về null
     public static MediaContent parse(String content) {
         if (content == null || content.trim().isEmpty()) {
             return null;
@@ -62,9 +59,7 @@ public class MediaContent {
         return null;
     }
 
-    /**
-     * Chuyển đổi đối tượng sang chuỗi JSON để lưu trữ và gửi qua mạng.
-     */
+    // Đổi sang chuỗi JSON để lưu vào cột content
     public String toJson() {
         return gson.toJson(this);
     }
@@ -99,7 +94,7 @@ public class MediaContent {
         return "FILE".equalsIgnoreCase(fileType);
     }
 
-    // Getters and Setters
+    // Getter, setter
     public boolean isMedia() {
         return isMedia;
     }

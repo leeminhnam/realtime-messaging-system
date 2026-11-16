@@ -20,9 +20,7 @@ import java.util.Map;
 public class GroupChatHandler {
     private static final Gson gson = new Gson();
 
-    /**
-     * Kiểm tra xem một action có thuộc module Group Chat hay không.
-     */
+    // Các action của chat nhóm
     public static boolean isGroupChatAction(String action) {
         return "CREATE_GROUP".equalsIgnoreCase(action)
                 || "GET_MY_GROUPS".equalsIgnoreCase(action)
@@ -35,14 +33,7 @@ public class GroupChatHandler {
                 || "GET_GROUP_HISTORY".equalsIgnoreCase(action);
     }
 
-    /**
-     * Xử lý chính cho tất cả các hành động của Module Group Chat (Chat nhóm).
-     *
-     * @param req             Đối tượng JSON yêu cầu từ Client
-     * @param writer          Luồng ghi của Client gửi yêu cầu
-     * @param currentUsername Tên người dùng đang đăng nhập
-     * @param onlineClients   Bảng ánh xạ các Client đang Online trên Server
-     */
+    // Mọi action chat nhóm đều cần đăng nhập trước
     public static void handleGroupChatAction(JsonObject req, PrintWriter writer, String currentUsername,
             Map<String, PrintWriter> onlineClients) {
 
@@ -89,9 +80,7 @@ public class GroupChatHandler {
         }
     }
 
-    /**
-     * 1. Tạo nhóm mới: người tạo là trưởng nhóm, các user được chọn là thành viên.
-     */
+    // Tạo nhóm mới: người tạo là trưởng nhóm, các user được chọn là thành viên.
     private static void handleCreateGroup(JsonObject data, PrintWriter writer, String currentUsername,
             Map<String, PrintWriter> onlineClients) {
 
@@ -132,9 +121,7 @@ public class GroupChatHandler {
         notifyGroupUpdated(groupId, getMemberUsernames(groupId), onlineClients);
     }
 
-    /**
-     * 2. Lấy danh sách các nhóm mà user đang tham gia.
-     */
+    // Các nhóm mà user đang tham gia
     private static void handleGetMyGroups(PrintWriter writer, String currentUsername) {
         List<ChatGroup> groups = GroupDAO.getGroupsOfUser(currentUsername);
 
@@ -153,9 +140,7 @@ public class GroupChatHandler {
         sendResponse(writer, "GET_MY_GROUPS_RESPONSE", "SUCCESS", "Tải danh sách nhóm thành công!", resData);
     }
 
-    /**
-     * 3. Lấy danh sách thành viên của nhóm (chỉ thành viên trong nhóm mới xem được).
-     */
+    // Chỉ thành viên mới xem được danh sách
     private static void handleGetMembers(JsonObject data, PrintWriter writer, String currentUsername) {
         int groupId = data.has("groupId") ? data.get("groupId").getAsInt() : 0;
         if (GroupDAO.getRole(groupId, currentUsername) == null) {
@@ -169,9 +154,7 @@ public class GroupChatHandler {
         sendResponse(writer, "GET_GROUP_MEMBERS_RESPONSE", "SUCCESS", "Tải thành viên thành công!", resData);
     }
 
-    /**
-     * 4. Thêm thành viên vào nhóm (chỉ trưởng nhóm).
-     */
+    // Chỉ trưởng nhóm được thêm thành viên
     private static void handleAddMember(JsonObject data, PrintWriter writer, String currentUsername,
             Map<String, PrintWriter> onlineClients) {
 
@@ -199,9 +182,7 @@ public class GroupChatHandler {
         notifyGroupUpdated(groupId, getMemberUsernames(groupId), onlineClients);
     }
 
-    /**
-     * 5. Xóa thành viên khỏi nhóm (chỉ trưởng nhóm, không tự xóa chính mình).
-     */
+    // Chỉ trưởng nhóm được xóa, và không tự xóa mình
     private static void handleRemoveMember(JsonObject data, PrintWriter writer, String currentUsername,
             Map<String, PrintWriter> onlineClients) {
 
@@ -229,9 +210,7 @@ public class GroupChatHandler {
         notifyGroupUpdated(groupId, toNotify, onlineClients);
     }
 
-    /**
-     * 6. Chuyển quyền trưởng nhóm cho một thành viên khác (chỉ trưởng nhóm).
-     */
+    // Chuyển quyền trưởng nhóm
     private static void handleTransferLeader(JsonObject data, PrintWriter writer, String currentUsername,
             Map<String, PrintWriter> onlineClients) {
 
@@ -253,9 +232,7 @@ public class GroupChatHandler {
         notifyGroupUpdated(groupId, getMemberUsernames(groupId), onlineClients);
     }
 
-    /**
-     * 7. Rời nhóm. Trưởng nhóm phải chuyển quyền trước, trừ khi là người cuối cùng (nhóm sẽ bị xóa).
-     */
+    // Rời nhóm. Trưởng nhóm phải chuyển quyền trước, trừ khi là người cuối cùng (nhóm sẽ bị xóa).
     private static void handleLeaveGroup(JsonObject data, PrintWriter writer, String currentUsername,
             Map<String, PrintWriter> onlineClients) {
 
@@ -273,7 +250,7 @@ public class GroupChatHandler {
                 sendResponse(writer, "LEAVE_GROUP_RESPONSE", "FAILED", "Trưởng nhóm cần chuyển quyền cho người khác trước khi rời nhóm!", null);
                 return;
             }
-            GroupDAO.deleteGroup(groupId); // Chỉ còn mình trưởng nhóm -> xóa nhóm
+            GroupDAO.deleteGroup(groupId); // người cuối cùng rời thì xóa luôn nhóm
         } else {
             GroupDAO.removeMember(groupId, currentUsername);
         }
@@ -282,9 +259,7 @@ public class GroupChatHandler {
         notifyGroupUpdated(groupId, toNotify, onlineClients);
     }
 
-    /**
-     * 8. Gửi tin nhắn nhóm: lưu CSDL, phản hồi người gửi, chuyển tiếp realtime cho các thành viên đang online.
-     */
+    // Lưu tin trước, phản hồi người gửi rồi mới chuyển cho các thành viên đang online
     private static void handleSendMessage(JsonObject data, PrintWriter writer, String currentUsername,
             Map<String, PrintWriter> onlineClients) {
 
@@ -326,9 +301,7 @@ public class GroupChatHandler {
         }
     }
 
-    /**
-     * 9. Lấy lịch sử tin nhắn nhóm (chỉ thành viên trong nhóm mới xem được).
-     */
+    // Lịch sử nhóm, cũng chỉ thành viên mới xem được
     private static void handleGetHistory(JsonObject data, PrintWriter writer, String currentUsername) {
         int groupId = data.has("groupId") ? data.get("groupId").getAsInt() : 0;
         int limit = data.has("limit") ? data.get("limit").getAsInt() : 50;
@@ -349,9 +322,7 @@ public class GroupChatHandler {
         sendResponse(writer, "GET_GROUP_HISTORY_RESPONSE", "SUCCESS", "Tải lịch sử nhóm thành công!", resData);
     }
 
-    /**
-     * Gửi gói GROUP_UPDATED cho các thành viên đang online để Client tự tải lại danh sách nhóm.
-     */
+    // Báo GROUP_UPDATED để Client tự tải lại danh sách nhóm
     private static void notifyGroupUpdated(int groupId, List<String> usernames, Map<String, PrintWriter> onlineClients) {
         JsonObject packet = new JsonObject();
         packet.addProperty("action", "GROUP_UPDATED");
@@ -374,7 +345,7 @@ public class GroupChatHandler {
         return GroupDAO.LEADER.equals(GroupDAO.getRole(groupId, username));
     }
 
-    // Lấy danh sách username của các thành viên trong nhóm
+    // Username của các thành viên trong nhóm
     private static List<String> getMemberUsernames(int groupId) {
         List<String> names = new ArrayList<>();
         for (GroupMember m : GroupDAO.getMembers(groupId)) {
@@ -383,7 +354,7 @@ public class GroupChatHandler {
         return names;
     }
 
-    // Tìm luồng ghi của một user đang online (không phân biệt hoa thường)
+    // Tìm theo username, không phân biệt hoa thường
     private static PrintWriter findWriter(Map<String, PrintWriter> onlineClients, String username) {
         for (Map.Entry<String, PrintWriter> entry : onlineClients.entrySet()) {
             if (entry.getKey().equalsIgnoreCase(username)) {
@@ -414,7 +385,7 @@ public class GroupChatHandler {
         return obj;
     }
 
-    // Tiện ích đóng gói JSON gửi về Client (dùng lại của Private Chat)
+    // Giống sendResponse bên PrivateChatHandler
     private static void sendResponse(PrintWriter writer, String action, String status, String message, JsonObject data) {
         PrivateChatHandler.sendResponse(writer, action, status, message, data);
     }

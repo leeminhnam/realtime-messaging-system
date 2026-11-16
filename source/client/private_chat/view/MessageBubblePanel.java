@@ -32,17 +32,15 @@ public class MessageBubblePanel extends JPanel {
 
         MediaContent media = MediaContent.parse(msg.getContent());
         if (media != null && media.isMedia()) {
-            // Hiển thị bóng chat dạng Media (Module 4: Ảnh, Audio, Video, File)
+            // Tin nhắn tệp
             add(createMediaBubble(msg, media, isMine));
         } else {
-            // Hiển thị bóng chat văn bản thuần túy (Mặc định)
+            // Tin nhắn chữ
             add(createTextBubble(msg, isMine));
         }
     }
 
-    /**
-     * Tạo bóng chat tin nhắn văn bản thông thường.
-     */
+    // Bong bóng cho tin nhắn chữ
     private JPanel createTextBubble(ChatMessage msg, boolean isMine) {
         Color bubbleBg = isMine ? new Color(0, 132, 255) : new Color(240, 242, 245);
         Color timeColor = isMine ? new Color(220, 235, 255) : new Color(130, 130, 130);
@@ -93,9 +91,7 @@ public class MessageBubblePanel extends JPanel {
         return bubbleBox;
     }
 
-    /**
-     * Tạo bóng chat Media (Module 4: Ảnh, Video, Voice note, Tài liệu).
-     */
+    // Bong bóng cho tệp: ảnh, ghi âm, video hoặc tài liệu
     private JPanel createMediaBubble(ChatMessage msg, MediaContent media, boolean isMine) {
         Color bubbleBg = isMine ? new Color(235, 245, 255) : new Color(245, 246, 248);
         Color borderColor = isMine ? new Color(160, 205, 255) : new Color(215, 220, 228);
@@ -126,7 +122,7 @@ public class MessageBubblePanel extends JPanel {
             buildFileCard(card, media);
         }
 
-        // Chân thông tin thời gian gửi
+        // Giờ gửi
         String timeStr = msg.getFormattedTime();
         if (!timeStr.isEmpty()) {
             JLabel lblTime = new JLabel(timeStr);
@@ -139,9 +135,7 @@ public class MessageBubblePanel extends JPanel {
         return card;
     }
 
-    /**
-     * Giao diện Card cho Hình ảnh (IMAGE).
-     */
+    // Ảnh
     private void buildImageCard(JPanel card, MediaContent media) {
         JPanel centerPanel = new JPanel();
         centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
@@ -157,7 +151,7 @@ public class MessageBubblePanel extends JPanel {
 
         centerPanel.add(lblThumb);
 
-        // Footer tên file và nút lưu
+        // Tên tệp và nút lưu
         JPanel footer = new JPanel(new BorderLayout(5, 0));
         footer.setOpaque(false);
         JLabel lblName = new JLabel("🖼️ " + media.getFileName() + " (" + media.getFormattedFileSize() + ")");
@@ -177,12 +171,12 @@ public class MessageBubblePanel extends JPanel {
 
         card.add(centerPanel, BorderLayout.CENTER);
 
-        // Tải ảnh qua FileClientManager
+        // Ảnh được tải sau, có dữ liệu rồi mới vẽ
         FileClientManager.getInstance().getFileData(media.getFileId(), imageBytes -> {
             try {
                 BufferedImage original = ImageIO.read(new ByteArrayInputStream(imageBytes));
                 if (original != null) {
-                    // Tỉ lệ scale vừa khung 240x160
+                    // Thu nhỏ cho vừa khung 240x160
                     int maxW = 240, maxH = 160;
                     double scale = Math.min((double) maxW / original.getWidth(), (double) maxH / original.getHeight());
                     int w = (int) (original.getWidth() * Math.min(1.0, scale));
@@ -195,7 +189,7 @@ public class MessageBubblePanel extends JPanel {
                     lblThumb.revalidate();
                     lblThumb.repaint();
 
-                    // Nhấn vào ảnh để xem toàn màn hình (Full Viewer)
+                    // Bấm vào ảnh để mở cửa sổ xem ảnh
                     lblThumb.addMouseListener(new MouseAdapter() {
                         @Override
                         public void mouseClicked(MouseEvent e) {
@@ -214,9 +208,7 @@ public class MessageBubblePanel extends JPanel {
         });
     }
 
-    /**
-     * Giao diện Card cho Đoạn ghi âm (AUDIO / VOICE NOTE).
-     */
+    // Ghi âm
     private void buildAudioCard(JPanel card, MediaContent media) {
         JPanel center = new JPanel(new BorderLayout(10, 5));
         center.setOpaque(false);
@@ -254,7 +246,7 @@ public class MessageBubblePanel extends JPanel {
 
         card.add(center, BorderLayout.CENTER);
 
-        // Xử lý sự kiện phát âm thanh
+        // Nút phát/dừng
         btnPlay.addActionListener(e -> {
             if (AudioPlayer.getInstance().isPlaying()) {
                 AudioPlayer.getInstance().stop();
@@ -277,9 +269,7 @@ public class MessageBubblePanel extends JPanel {
         });
     }
 
-    /**
-     * Giao diện Card cho Video (VIDEO).
-     */
+    // Video
     private void buildVideoCard(JPanel card, MediaContent media) {
         JPanel center = new JPanel(new BorderLayout(10, 6));
         center.setOpaque(false);
@@ -330,7 +320,7 @@ public class MessageBubblePanel extends JPanel {
 
         card.add(center, BorderLayout.CENTER);
 
-        // Xem video trực tiếp bằng player hệ điều hành
+        // Mở bằng trình phát của hệ điều hành
         btnOpen.addActionListener(e -> {
             btnOpen.setText("⌛...");
             FileClientManager.getInstance().getFileData(media.getFileId(), videoBytes -> {
@@ -346,9 +336,7 @@ public class MessageBubblePanel extends JPanel {
         });
     }
 
-    /**
-     * Giao diện Card cho Tệp tài liệu thông thường (FILE).
-     */
+    // Tài liệu và các tệp khác
     private void buildFileCard(JPanel card, MediaContent media) {
         JPanel center = new JPanel(new BorderLayout(10, 6));
         center.setOpaque(false);

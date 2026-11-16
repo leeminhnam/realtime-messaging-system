@@ -83,7 +83,7 @@ public class ProfileDialog extends JDialog {
         req.addProperty("action", "UPDATE_PROFILE");
         JsonObject data = new JsonObject();
         data.addProperty("fullName", newFullName);
-        data.addProperty("avatar", ""); // Để trống avatar
+        data.addProperty("avatar", ""); // chưa hỗ trợ đổi avatar
         req.add("data", data);
 
         writer.println(req.toString());

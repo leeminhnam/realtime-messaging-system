@@ -15,23 +15,14 @@ import java.util.Map;
 public class PrivateChatHandler {
     private static final Gson gson = new Gson();
 
-    /**
-     * Kiểm tra xem một action có thuộc module Private Chat hay không.
-     */
+    // Các action của chat riêng
     public static boolean isPrivateChatAction(String action) {
         return "SEND_PRIVATE_MESSAGE".equalsIgnoreCase(action)
                 || "GET_CHAT_HISTORY".equalsIgnoreCase(action)
                 || "MARK_MESSAGES_READ".equalsIgnoreCase(action);
     }
 
-    /**
-     * Xử lý chính cho tất cả các hành động liên quan tới Module Private Chat (Nhắn tin 1-1).
-     *
-     * @param req              Đối tượng JSON yêu cầu từ Client
-     * @param writer           Luồng ghi của Client gửi yêu cầu
-     * @param currentUsername  Tên người dùng đang đăng nhập của Client này
-     * @param onlineClients    Bảng ánh xạ các Client đang Online trên Server
-     */
+    // Mọi action chat riêng đều cần đăng nhập trước
     public static void handlePrivateChatAction(JsonObject req, PrintWriter writer, String currentUsername,
             Map<String, PrintWriter> onlineClients) {
 
@@ -63,13 +54,7 @@ public class PrivateChatHandler {
         }
     }
 
-    /**
-     * 1. Xử lý Gửi tin nhắn riêng 1-1:
-     * - Lưu tin nhắn vào CSDL SQLite.
-     * - Trả phản hồi thành công về cho người gửi.
-     * - Nếu người nhận đang Online, chuyển tiếp tin nhắn thời gian thực (Realtime) qua Socket của họ.
-     * - Gửi thông báo nổi thời gian thực (Notification) đến người nhận.
-     */
+    // Lưu tin, phản hồi người gửi, người nhận đang online thì đẩy luôn
     private static void handleSendMessage(JsonObject data, PrintWriter senderWriter, String senderUsername,
             Map<String, PrintWriter> onlineClients) {
 
@@ -93,7 +78,7 @@ public class PrivateChatHandler {
 
         System.out.println("[CHAT] Yêu cầu gửi tin: @" + senderUsername + " -> @" + receiverUsername + ": " + content);
 
-        // 1. Tìm hoặc tạo mới đoạn chat giữa 2 người
+        // Tìm hoặc tạo mới đoạn chat giữa 2 người
         Conversation conv = ConversationDAO.getOrCreateConversation(senderUsername, receiverUsername);
         if (conv == null) {
             System.err.println("[CHAT LỖI] Không thể tạo conversation giữa @" + senderUsername + " và @" + receiverUsername);
@@ -101,14 +86,14 @@ public class PrivateChatHandler {
             return;
         }
 
-        // 2. Lưu tin nhắn vào CSDL
+        // Lưu tin nhắn vào CSDL
         Message savedMsg = MessageDAO.saveMessage(conv.getId(), senderUsername, content);
         if (savedMsg == null) {
             sendResponse(senderWriter, "SEND_PRIVATE_MESSAGE_RESPONSE", "FAILED", "Lỗi lưu tin nhắn vào CSDL!", null);
             return;
         }
 
-        // Chuẩn bị dữ liệu gói tin nhắn
+        // Dữ liệu gói tin nhắn
         JsonObject msgData = new JsonObject();
         msgData.addProperty("id", savedMsg.getId());
         msgData.addProperty("conversationId", savedMsg.getConversationId());
@@ -117,20 +102,20 @@ public class PrivateChatHandler {
         msgData.addProperty("content", savedMsg.getContent());
         msgData.addProperty("sentAt", savedMsg.getSentAt());
 
-        // 3. Phản hồi xác nhận gửi thành công về cho người gửi
+        // Phản hồi người gửi
         sendResponse(senderWriter, "SEND_PRIVATE_MESSAGE_RESPONSE", "SUCCESS", "Gửi tin nhắn thành công!", msgData);
 
-        // 4. Nếu người nhận đang Online, chuyển tiếp tin nhắn ngay lập tức (Realtime)
+        // Người nhận đang online thì đẩy tin và thông báo luôn
         PrintWriter receiverWriter = onlineClients.get(receiverUsername);
         if (receiverWriter != null) {
-            // Gửi tin nhắn đến khung chat
+            // Gửi tin vào khung chat
             JsonObject receivePacket = new JsonObject();
             receivePacket.addProperty("action", "RECEIVE_PRIVATE_MESSAGE");
             receivePacket.addProperty("status", "SUCCESS");
             receivePacket.add("data", msgData);
             receiverWriter.println(gson.toJson(receivePacket));
 
-            // Gửi thông báo tin nhắn mới thời gian thực (Module 4)
+            // Thông báo nổi
             Map<String, String> senderInfo = UserDAO.getUserByUsername(senderUsername);
             String senderFullName = senderInfo != null ? senderInfo.get("fullName") : senderUsername;
 
@@ -152,11 +137,7 @@ public class PrivateChatHandler {
         }
     }
 
-    /**
-     * 2. Xử lý Lấy lịch sử tin nhắn cuộc trò chuyện giữa 2 người:
-     * - Tải danh sách N tin nhắn gần nhất.
-     * - Tự động đánh dấu các tin nhắn chưa đọc mà đối phương gửi cho tôi thành ĐÃ ĐỌC.
-     */
+    // Lấy lịch sử, đồng thời đánh dấu đã đọc tin của người kia
     private static void handleGetChatHistory(JsonObject data, PrintWriter writer, String currentUsername) {
         if (!data.has("targetUser")) {
             sendResponse(writer, "GET_CHAT_HISTORY_RESPONSE", "FAILED", "Thiếu thông tin người cần lấy tin nhắn!", null);
@@ -172,10 +153,10 @@ public class PrivateChatHandler {
             return;
         }
 
-        // Lấy danh sách tin nhắn cũ
+        // Lấy tin nhắn cũ
         List<Message> history = MessageDAO.getMessagesByConversationId(conv.getId(), limit);
 
-        // Đánh dấu đã đọc cho các tin nhắn đối phương gửi đến
+        // Mở hội thoại thì coi như đã đọc tin của người kia
         MessageDAO.markMessagesAsRead(conv.getId(), currentUsername);
 
         JsonObject resData = new JsonObject();
@@ -186,9 +167,7 @@ public class PrivateChatHandler {
         sendResponse(writer, "GET_CHAT_HISTORY_RESPONSE", "SUCCESS", "Tải lịch sử chat thành công!", resData);
     }
 
-    /**
-     * 3. Xử lý Đánh dấu tin nhắn đã đọc khi người dùng mở xem đoạn chat.
-     */
+    // Client gửi khi đang mở hội thoại mà có tin mới
     private static void handleMarkMessagesRead(JsonObject data, PrintWriter writer, String currentUsername) {
         if (!data.has("conversationId")) {
             return;
@@ -204,9 +183,7 @@ public class PrivateChatHandler {
         sendResponse(writer, "MARK_MESSAGES_READ_RESPONSE", "SUCCESS", "Đã đánh dấu đã đọc", resData);
     }
 
-    /**
-     * Tiện ích đóng gói JSON gửi về Client.
-     */
+    // Ghi một gói phản hồi
     public static void sendResponse(PrintWriter writer, String action, String status, String message, JsonObject data) {
         JsonObject res = new JsonObject();
         res.addProperty("action", action);

@@ -39,7 +39,7 @@ public class ImageViewerDialog extends JDialog {
     private void initUI() {
         JPanel mainPanel = new JPanel(new BorderLayout());
 
-        // Thanh công cụ phía trên
+        // Thanh công cụ
         JToolBar toolBar = new JToolBar();
         toolBar.setFloatable(false);
         toolBar.setBackground(new Color(245, 246, 248));
@@ -74,13 +74,13 @@ public class ImageViewerDialog extends JDialog {
 
         mainPanel.add(toolBar, BorderLayout.NORTH);
 
-        // Khung hiển thị ảnh
+        // Vùng hiện ảnh
         lblImage = new JLabel();
         lblImage.setHorizontalAlignment(SwingConstants.CENTER);
         lblImage.setVerticalAlignment(SwingConstants.CENTER);
 
         scrollPane = new JScrollPane(lblImage);
-        scrollPane.getViewport().setBackground(new Color(40, 44, 52)); // Nền xám đen xem ảnh chuẩn Studio
+        scrollPane.getViewport().setBackground(new Color(40, 44, 52)); // nền tối cho dễ xem ảnh
         mainPanel.add(scrollPane, BorderLayout.CENTER);
 
         updateImageDisplay();

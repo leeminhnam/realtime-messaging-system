@@ -11,11 +11,11 @@ import java.util.Map;
 
 public class UserDAO {
 
-    // 1. Đăng ký tài khoản mới (Hash mật khẩu bằng BCrypt)
+    // Mật khẩu được băm bằng BCrypt trước khi lưu
     public static boolean register(String username, String password, String fullName) {
         String sql = "INSERT INTO users(username, password, full_name, status) VALUES(?, ?, ?, 'OFFLINE')";
 
-        // Hash mật khẩu
+        // Băm mật khẩu
         String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
 
         try (Connection conn = DatabaseManager.getConnection();
@@ -31,7 +31,7 @@ public class UserDAO {
         }
     }
 
-    // 2. Xác thực đăng nhập
+    // Xác thực đăng nhập
     public static Map<String, String> login(String username, String password) {
         String sql = "SELECT * FROM users WHERE username = ?";
 
@@ -42,9 +42,9 @@ public class UserDAO {
 
             if (rs.next()) {
                 String storedHash = rs.getString("password");
-                // So sánh mật khẩu nhập vào với mã hash trong DB
+                // So mật khẩu nhập vào với mã băm trong CSDL
                 if (BCrypt.checkpw(password, storedHash)) {
-                    // Cập nhật trạng thái thành ONLINE
+                    // Chuyển trạng thái sang ONLINE
                     updateStatus(username, "ONLINE");
 
                     Map<String, String> user = new HashMap<>();
@@ -58,10 +58,10 @@ public class UserDAO {
         } catch (SQLException e) {
             System.err.println("[UserDAO] Lỗi đăng nhập: " + e.getMessage());
         }
-        return null; // Đăng nhập thất bại
+        return null; // sai tên đăng nhập hoặc mật khẩu
     }
 
-    // 3. Cập nhật trạng thái ONLINE / OFFLINE
+    // Cập nhật trạng thái ONLINE/OFFLINE
     public static void updateStatus(String username, String status) {
         String sql = "UPDATE users SET status = ? WHERE username = ?";
         try (Connection conn = DatabaseManager.getConnection();
@@ -74,7 +74,7 @@ public class UserDAO {
         }
     }
 
-    // 4. Lấy danh sách tất cả người dùng (phục vụ xem danh sách & theo dõi trạng thái)
+    // Toàn bộ người dùng, dùng để dựng danh bạ
     public static List<Map<String, String>> getAllUsers() {
         List<Map<String, String>> userList = new ArrayList<>();
         String sql = "SELECT username, full_name, avatar, status FROM users";
@@ -97,7 +97,7 @@ public class UserDAO {
         return userList;
     }
 
-    // 5. Cập nhật hồ sơ cá nhân
+    // Cập nhật hồ sơ cá nhân
     public static boolean updateProfile(String username, String fullName, String avatar) {
         String sql = "UPDATE users SET full_name = ?, avatar = ? WHERE username = ?";
         try (Connection conn = DatabaseManager.getConnection();
@@ -112,7 +112,7 @@ public class UserDAO {
         }
     }
 
-    // 6. Lấy thông tin 1 người dùng theo username
+    // Lấy thông tin một người dùng theo username
     public static Map<String, String> getUserByUsername(String username) {
         String sql = "SELECT username, full_name, avatar, status FROM users WHERE username = ?";
         try (Connection conn = DatabaseManager.getConnection();

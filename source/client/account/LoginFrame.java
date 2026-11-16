@@ -114,7 +114,7 @@ public class LoginFrame extends JFrame {
                     SwingUtilities.invokeLater(() -> {
                         if ("SUCCESS".equalsIgnoreCase(status)) {
                             JsonObject userData = res.getAsJsonObject("data");
-                            dispose(); // Đóng LoginFrame
+                            dispose(); // đóng màn hình đăng nhập
 
                             if (loginSuccessCallback != null) {
                                 loginSuccessCallback.onLoginSuccess(socket, reader, writer, userData);

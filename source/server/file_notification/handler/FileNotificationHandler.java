@@ -21,20 +21,16 @@ import java.util.UUID;
 
 public class FileNotificationHandler {
     private static final Gson gson = new Gson();
-    // Cùng thư mục dữ liệu với DatabaseManager (có thể ghi đè bằng -Dchatnest.db.dir khi chạy test)
+    // Cùng thư mục dữ liệu với DatabaseManager
     private static final String UPLOAD_DIR = System.getProperty("chatnest.db.dir", "source/server/data") + "/uploads";
 
-    /**
-     * Kiểm tra xem action có thuộc Module File & Notification không.
-     */
+    // Các action về tệp
     public static boolean isFileNotificationAction(String action) {
         return "SEND_FILE".equalsIgnoreCase(action)
                 || "DOWNLOAD_FILE".equalsIgnoreCase(action);
     }
 
-    /**
-     * Xử lý chính các yêu cầu của Module 4.
-     */
+    // Xử lý các yêu cầu về tệp
     public static void handleFileNotificationAction(JsonObject req, PrintWriter writer, String currentUsername,
                                                     Map<String, PrintWriter> onlineClients) {
         if (currentUsername == null || currentUsername.trim().isEmpty()) {
@@ -60,9 +56,7 @@ public class FileNotificationHandler {
         }
     }
 
-    /**
-     * Xử lý khi Client gửi file (ảnh, video, audio, tài liệu).
-     */
+    // SEND_FILE: lưu tệp, tạo tin nhắn rồi chuyển cho người nhận
     private static void handleSendFile(JsonObject data, PrintWriter senderWriter, String senderUsername,
                                        Map<String, PrintWriter> onlineClients) {
         if (!data.has("receiver") || !data.has("fileName") || !data.has("base64Data")) {
@@ -88,34 +82,34 @@ public class FileNotificationHandler {
         }
 
         try {
-            // 1. Giải mã Base64 thành byte
+            // Giải mã Base64 thành byte
             byte[] fileBytes = Base64.getDecoder().decode(base64Data);
             long fileSize = fileBytes.length;
 
-            // Đảm bảo thư mục upload tồn tại
+            // Tạo thư mục uploads nếu chưa có
             File uploadFolder = new File(UPLOAD_DIR);
             if (!uploadFolder.exists()) {
                 uploadFolder.mkdirs();
             }
 
-            // Tạo tên file lưu trữ duy nhất để tránh trùng lặp
+            // Thêm thời gian và chuỗi ngẫu nhiên vào tên để không bị trùng
             String safeFileName = originalFileName.replaceAll("[^a-zA-Z0-9._-]", "_");
             String storedFileName = System.currentTimeMillis() + "_" + UUID.randomUUID().toString().substring(0, 8) + "_" + safeFileName;
             File targetFile = new File(uploadFolder, storedFileName);
 
-            // Lưu file ra đĩa
+            // Ghi tệp ra đĩa
             try (FileOutputStream fos = new FileOutputStream(targetFile)) {
                 fos.write(fileBytes);
             }
 
-            // 2. Tìm hoặc tạo cuộc trò chuyện giữa 2 người
+            // Tìm hoặc tạo cuộc trò chuyện giữa 2 người
             Conversation conv = ConversationDAO.getOrCreateConversation(senderUsername, receiverUsername);
             if (conv == null) {
                 sendResponse(senderWriter, "SEND_FILE_RESPONSE", "FAILED", "Không thể tạo cuộc hội thoại!", null);
                 return;
             }
 
-            // 3. Lưu thông tin tệp vào CSDL (bảng file_attachments)
+            // Ghi vào file_attachments
             FileAttachment attachment = FileAttachmentDAO.saveFileAttachment(
                     conv.getId(), 0, senderUsername, receiverUsername, originalFileName, fileType, fileSize, targetFile.getAbsolutePath()
             );
@@ -125,7 +119,7 @@ public class FileNotificationHandler {
                 return;
             }
 
-            // 4. Tạo nội dung tin nhắn dạng cấu trúc JSON Media
+            // Nội dung tin nhắn chỉ là JSON mô tả tệp, không chứa dữ liệu tệp
             JsonObject mediaContentJson = new JsonObject();
             mediaContentJson.addProperty("isMedia", true);
             mediaContentJson.addProperty("fileId", attachment.getId());
@@ -143,7 +137,7 @@ public class FileNotificationHandler {
                 FileAttachmentDAO.updateMessageId(attachment.getId(), savedMsg.getId());
             }
 
-            // 5. Chuẩn bị gói dữ liệu phản hồi
+            // Chuẩn bị dữ liệu phản hồi
             JsonObject resData = new JsonObject();
             resData.addProperty("id", savedMsg != null ? savedMsg.getId() : 0);
             resData.addProperty("conversationId", conv.getId());
@@ -162,17 +156,17 @@ public class FileNotificationHandler {
             System.out.println("[FILE UPLOAD] @" + senderUsername + " đã gửi tệp [" + fileType + "] "
                     + originalFileName + " (" + (fileSize / 1024) + " KB) tới @" + receiverUsername);
 
-            // 6. Chuyển tiếp thời gian thực cho người nhận (nếu đang Online)
+            // Người nhận đang online thì đẩy luôn
             PrintWriter receiverWriter = onlineClients.get(receiverUsername);
             if (receiverWriter != null) {
-                // a. Gửi tin nhắn mới để hiển thị ngay trong khung chat của người nhận
+                // Hiện trong khung chat
                 JsonObject receiveMsgPacket = new JsonObject();
                 receiveMsgPacket.addProperty("action", "RECEIVE_PRIVATE_MESSAGE");
                 receiveMsgPacket.addProperty("status", "SUCCESS");
                 receiveMsgPacket.add("data", resData);
                 receiverWriter.println(gson.toJson(receiveMsgPacket));
 
-                // b. Gửi thông báo nổi thời gian thực (Realtime Toast Notification)
+                // và hiện thông báo nổi
                 Map<String, String> senderInfo = UserDAO.getUserByUsername(senderUsername);
                 String senderFullName = senderInfo != null ? senderInfo.get("fullName") : senderUsername;
 
@@ -216,9 +210,7 @@ public class FileNotificationHandler {
         }
     }
 
-    /**
-     * Xử lý khi Client yêu cầu tải nội dung file theo fileId.
-     */
+    // DOWNLOAD_FILE: đọc tệp trong uploads, mã hóa Base64 rồi gửi về
     private static void handleDownloadFile(JsonObject data, PrintWriter writer) {
         if (!data.has("fileId")) {
             sendResponse(writer, "DOWNLOAD_FILE_RESPONSE", "FAILED", "Thiếu fileId!", null);
@@ -258,9 +250,7 @@ public class FileNotificationHandler {
         }
     }
 
-    /**
-     * Tiện ích gửi phản hồi JSON chuẩn.
-     */
+    // Ghi một gói phản hồi
     private static void sendResponse(PrintWriter writer, String action, String status, String message, JsonObject data) {
         JsonObject res = new JsonObject();
         res.addProperty("action", action);

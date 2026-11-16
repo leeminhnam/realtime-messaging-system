@@ -19,7 +19,7 @@ public class PrivateChatPanel extends JPanel {
     public PrivateChatPanel() {
         setLayout(new BorderLayout());
 
-        // 1. Màn hình chờ khi chưa chọn ai để chat
+        // Màn hình chờ khi chưa chọn ai để chat
         JPanel placeholderPanel = new JPanel(new GridBagLayout());
         placeholderPanel.setBackground(new Color(250, 250, 252));
         JLabel lblPlaceholder = new JLabel("Chọn một người dùng ở danh sách bên trái để bắt đầu trò chuyện");
@@ -27,7 +27,7 @@ public class PrivateChatPanel extends JPanel {
         lblPlaceholder.setForeground(new Color(130, 130, 130));
         placeholderPanel.add(lblPlaceholder);
 
-        // 2. Màn hình chat thực thụ (gồm Header, List, Input)
+        // Khung chat: header, danh sách tin và ô nhập
         JPanel activeChatPanel = new JPanel(new BorderLayout());
         activeChatPanel.add(headerPanel, BorderLayout.NORTH);
         activeChatPanel.add(messageListPanel, BorderLayout.CENTER);
@@ -39,7 +39,7 @@ public class PrivateChatPanel extends JPanel {
 
         add(cardsPanel, BorderLayout.CENTER);
 
-        // Mặc định ban đầu hiển thị màn hình chờ
+        // Ban đầu hiện màn hình chờ
         showPlaceholder();
     }
 

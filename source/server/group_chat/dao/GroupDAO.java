@@ -18,11 +18,7 @@ public class GroupDAO {
             + "(SELECT COUNT(*) FROM group_members WHERE group_id = g.id) AS member_count "
             + "FROM chat_groups g ";
 
-    /**
-     * Tạo nhóm mới: người tạo là trưởng nhóm, những người còn lại là thành viên thường.
-     *
-     * @return id của nhóm vừa tạo, -1 nếu lỗi
-     */
+    // Người tạo là trưởng nhóm. Trả về id nhóm mới, lỗi thì -1
     public static int createGroup(String name, String leader, List<String> members) {
         String sql = "INSERT INTO chat_groups(name, created_at) VALUES(?, datetime('now', 'localtime'))";
 
@@ -48,9 +44,7 @@ public class GroupDAO {
         return -1;
     }
 
-    /**
-     * Thêm một người vào nhóm với vai trò cho trước (trả về false nếu đã có trong nhóm).
-     */
+    // Trả về false nếu người này đã ở trong nhóm
     public static boolean addMember(int groupId, String username, String role) {
         String sql = "INSERT INTO group_members(group_id, username, role, joined_at) "
                 + "VALUES(?, ?, ?, datetime('now', 'localtime'))";
@@ -68,9 +62,7 @@ public class GroupDAO {
         }
     }
 
-    /**
-     * Xóa một thành viên khỏi nhóm.
-     */
+    // Xóa thành viên khỏi nhóm
     public static boolean removeMember(int groupId, String username) {
         String sql = "DELETE FROM group_members WHERE group_id = ? AND username = ?";
 
@@ -86,9 +78,7 @@ public class GroupDAO {
         }
     }
 
-    /**
-     * Đổi vai trò của một thành viên (LEADER / MEMBER).
-     */
+    // Đổi vai trò thành viên (LEADER/MEMBER)
     public static boolean setRole(int groupId, String username, String role) {
         String sql = "UPDATE group_members SET role = ? WHERE group_id = ? AND username = ?";
 
@@ -105,16 +95,12 @@ public class GroupDAO {
         }
     }
 
-    /**
-     * Chuyển quyền trưởng nhóm: trưởng nhóm cũ thành thành viên, người được chọn thành trưởng nhóm.
-     */
+    // Trưởng nhóm cũ thành MEMBER, người được chọn thành LEADER
     public static boolean transferLeader(int groupId, String oldLeader, String newLeader) {
         return setRole(groupId, oldLeader, MEMBER) && setRole(groupId, newLeader, LEADER);
     }
 
-    /**
-     * Xóa hẳn nhóm cùng thành viên và tin nhắn của nhóm (dùng khi nhóm không còn ai).
-     */
+    // Gọi khi người cuối cùng rời nhóm
     public static void deleteGroup(int groupId) {
         String[] sqls = {
                 "DELETE FROM group_messages WHERE group_id = ?",
@@ -134,9 +120,7 @@ public class GroupDAO {
         }
     }
 
-    /**
-     * Lấy vai trò của user trong nhóm. Trả về null nếu user không thuộc nhóm.
-     */
+    // null nghĩa là không thuộc nhóm
     public static String getRole(int groupId, String username) {
         String sql = "SELECT role FROM group_members WHERE group_id = ? AND username = ?";
 
@@ -156,9 +140,7 @@ public class GroupDAO {
         return null;
     }
 
-    /**
-     * Lấy thông tin một nhóm theo id.
-     */
+    // Lấy nhóm theo id
     public static ChatGroup getGroupById(int groupId) {
         try (Connection conn = DatabaseManager.getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(SELECT_GROUP + "WHERE g.id = ?")) {
@@ -175,9 +157,7 @@ public class GroupDAO {
         return null;
     }
 
-    /**
-     * Lấy danh sách các nhóm mà user đang tham gia.
-     */
+    // Các nhóm mà user đang tham gia
     public static List<ChatGroup> getGroupsOfUser(String username) {
         List<ChatGroup> list = new ArrayList<>();
         String sql = SELECT_GROUP + "WHERE g.id IN (SELECT group_id FROM group_members WHERE username = ?) "
@@ -198,9 +178,7 @@ public class GroupDAO {
         return list;
     }
 
-    /**
-     * Lấy danh sách thành viên của nhóm (trưởng nhóm xếp đầu tiên).
-     */
+    // Trưởng nhóm xếp đầu danh sách
     public static List<GroupMember> getMembers(int groupId) {
         List<GroupMember> list = new ArrayList<>();
         String sql = "SELECT m.username, u.full_name, u.status, m.role "
@@ -230,7 +208,7 @@ public class GroupDAO {
         return list;
     }
 
-    // Đọc một dòng kết quả SELECT_GROUP thành đối tượng ChatGroup
+    // Đọc một dòng SELECT_GROUP thành ChatGroup
     private static ChatGroup readGroup(ResultSet rs) throws SQLException {
         return new ChatGroup(
                 rs.getInt("id"),

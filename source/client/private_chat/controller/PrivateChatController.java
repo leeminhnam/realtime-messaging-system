@@ -32,12 +32,12 @@ public class PrivateChatController {
     }
 
     private void initEventHandlers() {
-        // 1. Lắng nghe sự kiện người dùng gửi tin nhắn chữ
+        // Gửi tin chữ
         view.getInputPanel().setSendMessageListener(content -> {
             sendPrivateMessage(content);
         });
 
-        // 2. Lắng nghe sự kiện người dùng chọn gửi tệp (ảnh, video, tài liệu) - Module 4
+        // Gửi tệp (ảnh, video, tài liệu)
         view.getInputPanel().setSendFileListener((file, fileType) -> {
             String receiver = view.getCurrentPartnerUsername();
             if (receiver != null && !receiver.trim().isEmpty()) {
@@ -45,7 +45,7 @@ public class PrivateChatController {
             }
         });
 
-        // 3. Lắng nghe sự kiện người dùng gửi đoạn ghi âm - Module 4
+        // Gửi ghi âm
         view.getInputPanel().setSendVoiceListener((wavBytes, durationSeconds) -> {
             String receiver = view.getCurrentPartnerUsername();
             if (receiver != null && !receiver.trim().isEmpty()) {
@@ -55,22 +55,18 @@ public class PrivateChatController {
         });
     }
 
-    /**
-     * Mở cuộc trò chuyện với một người dùng được chọn từ danh bạ.
-     *
-     * @param partner Thông tin đối tác trò chuyện
-     */
+    // Mở hội thoại với người được chọn trong danh bạ
     public void openChatWith(ChatPartner partner) {
         if (partner == null) {
             view.showPlaceholder();
             return;
         }
 
-        // 1. Chuyển giao diện sang chế độ active chat
+        // Chuyển sang khung chat
         view.showChat(partner);
         view.getMessageListPanel().clearMessages();
 
-        // 2. Gửi yêu cầu lên Server để tải lịch sử chat cũ
+        // Tải lịch sử
         JsonObject req = new JsonObject();
         req.addProperty("action", "GET_CHAT_HISTORY");
         JsonObject data = new JsonObject();
@@ -81,9 +77,7 @@ public class PrivateChatController {
         writer.println(gson.toJson(req));
     }
 
-    /**
-     * Gửi tin nhắn mới lên Server.
-     */
+    // Gửi tin nhắn lên Server
     public void sendPrivateMessage(String content) {
         String receiver = view.getCurrentPartnerUsername();
         if (receiver == null || receiver.trim().isEmpty() || content.trim().isEmpty()) {
@@ -100,16 +94,14 @@ public class PrivateChatController {
         writer.println(gson.toJson(req));
     }
 
-    /**
-     * Xử lý khi nhận được gói tin lịch sử chat từ Server (GET_CHAT_HISTORY_RESPONSE).
-     */
+    // GET_CHAT_HISTORY_RESPONSE
     public void onChatHistoryReceived(JsonObject resData) {
         if (resData == null) return;
 
         String targetUser = resData.has("targetUser") ? resData.get("targetUser").getAsString() : "";
         String activeUser = view.getCurrentPartnerUsername();
 
-        // Đảm bảo chỉ nạp tin nhắn nếu người dùng vẫn đang mở đúng khung chat đó
+        // Trong lúc chờ, người dùng có thể đã chuyển sang hội thoại khác
         if (activeUser != null && activeUser.equalsIgnoreCase(targetUser)) {
             List<ChatMessage> list = new ArrayList<>();
             if (resData.has("messages")) {
@@ -127,10 +119,7 @@ public class PrivateChatController {
         }
     }
 
-    /**
-     * Xử lý phản hồi khi gửi tin nhắn hoặc gửi tệp thành công (SEND_PRIVATE_MESSAGE_RESPONSE / SEND_FILE_RESPONSE).
-     * Hiển thị tin nhắn/media vừa gửi lên bong bóng bên phải.
-     */
+    // Server xác nhận đã lưu thì mới hiện tin của mình lên khung chat
     public void onSendMessageSuccess(JsonObject msgData) {
         if (msgData == null) return;
 
@@ -145,9 +134,7 @@ public class PrivateChatController {
         }
     }
 
-    /**
-     * Xử lý khi nhận được tin nhắn thời gian thực do đối phương gửi đến (RECEIVE_PRIVATE_MESSAGE).
-     */
+    // RECEIVE_PRIVATE_MESSAGE: người khác vừa gửi tin tới
     public void onMessageReceived(JsonObject msgData) {
         if (msgData == null) return;
 
@@ -155,13 +142,13 @@ public class PrivateChatController {
         String sender = msg.getSender();
         String activeUser = view.getCurrentPartnerUsername();
 
-        // Nếu đang mở đúng khung chat của người gửi -> thêm bong bóng chat ngay lập tức
+        // Đang mở đúng hội thoại thì hiện luôn
         if (activeUser != null && activeUser.equalsIgnoreCase(sender)) {
             SwingUtilities.invokeLater(() -> {
                 view.getMessageListPanel().addMessage(msg);
             });
 
-            // Gửi thông báo đã đọc về Server
+            // Báo Server là đã đọc
             if (msg.getConversationId() > 0) {
                 JsonObject readReq = new JsonObject();
                 readReq.addProperty("action", "MARK_MESSAGES_READ");
@@ -173,9 +160,7 @@ public class PrivateChatController {
         }
     }
 
-    /**
-     * Cập nhật trạng thái Online/Offline của người đang chat khi nhận được USER_STATUS_CHANGE.
-     */
+    // Người đang chat online/offline thì cập nhật header
     public void onPartnerStatusChanged(String username, String status) {
         String activeUser = view.getCurrentPartnerUsername();
         if (activeUser != null && activeUser.equalsIgnoreCase(username)) {

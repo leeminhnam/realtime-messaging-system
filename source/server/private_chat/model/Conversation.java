@@ -58,12 +58,7 @@ public class Conversation {
         this.updatedAt = updatedAt;
     }
 
-    /**
-     * Tiện ích lấy ra người còn lại trong cuộc trò chuyện (đối phương).
-     *
-     * @param currentUsername Tên người dùng hiện tại
-     * @return Tên người dùng đối phương
-     */
+    // Người còn lại trong hội thoại
     public String getOtherUser(String currentUsername) {
         if (currentUsername == null) return null;
         if (currentUsername.equalsIgnoreCase(user1Username)) {

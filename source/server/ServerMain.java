@@ -22,7 +22,7 @@ public class ServerMain {
     public static final int PORT = 8888;
     private static final ExecutorService threadPool = Executors.newCachedThreadPool();
 
-    // Map quản lý danh sách các Client đang Online (Key: username, Value: Luồng ghi PrintWriter)
+    // username -> luồng ghi của các Client đang online
     public static final Map<String, PrintWriter> onlineClients = new ConcurrentHashMap<>();
 
     public static void main(String[] args) {
@@ -30,7 +30,7 @@ public class ServerMain {
         System.out.println("   CHATNEST - SERVER                              ");
         System.out.println("==================================================");
 
-        // Khởi tạo CSDL SQLite và reset trạng thái các user về OFFLINE
+        // Tạo bảng nếu chưa có, đưa mọi tài khoản về OFFLINE
         DatabaseManager.initDatabase();
 
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
@@ -51,7 +51,7 @@ public class ServerMain {
         }
     }
 
-    // Phát thông báo JSON tới tất cả Client đang Online
+    // Gửi một gói tới mọi Client đang online
     public static void broadcast(String jsonMsg, String excludeUsername) {
         for (Map.Entry<String, PrintWriter> entry : onlineClients.entrySet()) {
             if (excludeUsername == null || !entry.getKey().equalsIgnoreCase(excludeUsername)) {
@@ -75,7 +75,7 @@ public class ServerMain {
                     PrintWriter writer = new PrintWriter(socket.getOutputStream(), true)) {
                 String message;
                 while ((message = reader.readLine()) != null) {
-                    // Cắt bớt log nếu message quá dài (tránh spam console khi truyền base64)
+                    // Gói SEND_FILE rất dài nên chỉ in một đoạn đầu
                     String logMsg = message.length() > 200 ? message.substring(0, 200) + "... (độ dài: " + message.length() + ")" : message;
                     System.out.println("[NHẬN TỪ " + socket.getRemoteSocketAddress() + "]: " + logMsg);
 
@@ -83,38 +83,38 @@ public class ServerMain {
                         JsonObject req = JsonParser.parseString(message).getAsJsonObject();
                         String action = req.has("action") ? req.get("action").getAsString() : "";
 
-                        // 1. Phân luồng các gói tin liên quan tới Tài khoản (Account)
+                        // Tài khoản
                         if (AccountHandler.isAccountAction(action)) {
                             String loggedInUser = AccountHandler.handleAccountAction(message, writer, authenticatedUsername);
 
-                            // Nếu xử lý trả về username tức là vừa ĐĂNG NHẬP THÀNH CÔNG
+                            // Trả về username nghĩa là vừa đăng nhập thành công
                             if (loggedInUser != null) {
                                 this.authenticatedUsername = loggedInUser;
                                 onlineClients.put(loggedInUser, writer);
 
-                                // Lấy thông tin user để broadcast kèm họ tên cho các client khác
+                                // Lấy họ tên để gửi kèm khi broadcast
                                 Map<String, String> userInfo = UserDAO.getUserByUsername(loggedInUser);
                                 String fullName = userInfo != null ? userInfo.get("fullName") : loggedInUser;
                                 String avatar = userInfo != null ? userInfo.get("avatar") : "";
 
-                                // Broadcast thông báo cho các client khác biết user này vừa ONLINE
+                                // Báo cho các Client khác là người này vừa online
                                 String statusJson = AccountHandler.createStatusChangeJson(loggedInUser, "ONLINE", fullName, avatar);
                                 broadcast(statusJson, loggedInUser);
                             }
                         }
-                        // 2. Phân luồng các gói tin liên quan tới Chat riêng 1-1 (Private Chat)
+                        // Chat riêng
                         else if (PrivateChatHandler.isPrivateChatAction(action)) {
                             PrivateChatHandler.handlePrivateChatAction(req, writer, authenticatedUsername, onlineClients);
                         }
-                        // 3. Phân luồng các gói tin liên quan tới Module 4: Truyền tải file & Thông báo (File & Notification)
+                        // Gửi, tải tệp
                         else if (FileNotificationHandler.isFileNotificationAction(action)) {
                             FileNotificationHandler.handleFileNotificationAction(req, writer, authenticatedUsername, onlineClients);
                         }
-                        // 4. Phân luồng các gói tin liên quan tới Module 3: Chat nhóm (Group Chat)
+                        // Chat nhóm
                         else if (GroupChatHandler.isGroupChatAction(action)) {
                             GroupChatHandler.handleGroupChatAction(req, writer, authenticatedUsername, onlineClients);
                         }
-                        // 5. Các hành động chưa hỗ trợ
+                        // Action không thuộc nhóm nào
                         else {
                             JsonObject err = new JsonObject();
                             err.addProperty("action", "ERROR");
@@ -129,12 +129,12 @@ public class ServerMain {
             } catch (IOException e) {
                 System.out.println("[SERVER] Client " + socket.getRemoteSocketAddress() + " đã ngắt kết nối.");
             } finally {
-                // Xử lý khi Client thoát hoặc mất kết nối đột ngột
+                // Client thoát hoặc mất kết nối thì dọn dẹp ở đây
                 if (authenticatedUsername != null) {
                     onlineClients.remove(authenticatedUsername);
                     UserDAO.updateStatus(authenticatedUsername, "OFFLINE");
 
-                    // Broadcast thông báo user vừa OFFLINE
+                    // Báo cho mọi người là đã offline
                     String statusJson = AccountHandler.createStatusChangeJson(authenticatedUsername, "OFFLINE");
                     broadcast(statusJson, authenticatedUsername);
                     System.out.println("[SERVER] User '" + authenticatedUsername + "' chuyển sang OFFLINE.");

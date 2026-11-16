@@ -18,7 +18,7 @@ public class ChatHeaderPanel extends JPanel {
                 BorderFactory.createEmptyBorder(10, 16, 10, 16)));
         setBackground(Color.WHITE);
 
-        // Avatar tròn mặc định hiển thị chữ cái đầu tiên
+        // Avatar tròn hiện chữ cái đầu của tên
         lblAvatar.setPreferredSize(new Dimension(42, 42));
         lblAvatar.setHorizontalAlignment(SwingConstants.CENTER);
         lblAvatar.setFont(new Font("Segoe UI", Font.BOLD, 18));
@@ -44,9 +44,7 @@ public class ChatHeaderPanel extends JPanel {
         add(infoPanel, BorderLayout.CENTER);
     }
 
-    /**
-     * Cập nhật thông tin đối tác chat khi bấm chọn từ danh sách.
-     */
+    // Cập nhật thông tin người đang chat khi chọn từ danh sách
     public void setPartner(ChatPartner partner) {
         this.currentPartner = partner;
         if (partner == null) {
@@ -59,16 +57,14 @@ public class ChatHeaderPanel extends JPanel {
         String displayName = partner.getDisplayName();
         lblFullName.setText(displayName);
 
-        // Hiển thị chữ cái đầu tiên lên Avatar
+        // Hiện chữ cái đầu lên avatar
         String firstLetter = displayName.isEmpty() ? "?" : displayName.substring(0, 1).toUpperCase();
         lblAvatar.setText(firstLetter);
 
         updateStatus(partner.getStatus());
     }
 
-    /**
-     * Cập nhật trạng thái Online / Offline thời gian thực.
-     */
+    // Cập nhật trạng thái online/offline
     public void updateStatus(String status) {
         if (currentPartner != null) {
             currentPartner.setStatus(status);
@@ -76,10 +72,10 @@ public class ChatHeaderPanel extends JPanel {
 
         if ("ONLINE".equalsIgnoreCase(status)) {
             lblStatus.setText("● Đang hoạt động");
-            lblStatus.setForeground(new Color(40, 167, 69)); // Xanh lá
+            lblStatus.setForeground(new Color(40, 167, 69)); // xanh lá
         } else {
             lblStatus.setText("● Không hoạt động");
-            lblStatus.setForeground(new Color(130, 130, 130)); // Xám
+            lblStatus.setForeground(new Color(130, 130, 130)); // xám
         }
     }
 

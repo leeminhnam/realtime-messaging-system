@@ -11,7 +11,7 @@ public class Message {
     public Message() {
     }
 
-    // Constructor để tạo tin nhắn mới gửi lên (chưa có id và sentAt)
+    // Tin mới, chưa có id và sentAt
     public Message(int conversationId, String senderUsername, String content) {
         this.conversationId = conversationId;
         this.senderUsername = senderUsername;
@@ -19,7 +19,7 @@ public class Message {
         this.isRead = false;
     }
 
-    // Constructor đầy đủ khi đọc từ CSDL lên
+    // Đọc từ CSDL
     public Message(int id, int conversationId, String senderUsername, String content, String sentAt, boolean isRead) {
         this.id = id;
         this.conversationId = conversationId;
