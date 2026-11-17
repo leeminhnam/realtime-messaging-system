@@ -87,6 +87,32 @@ public class ChatMessage {
         return sentAt;
     }
 
+    // Phần ngày yyyy-MM-dd, dùng để so hai tin có cùng ngày không
+    public String getDateKey() {
+        if (sentAt == null || sentAt.length() < 10) {
+            return "";
+        }
+        return sentAt.substring(0, 10);
+    }
+
+    // Ngày hiển thị trên vạch ngăn: Hôm nay, Hôm qua hoặc dd/MM/yyyy
+    public String getFormattedDate() {
+        String key = getDateKey();
+        try {
+            java.time.LocalDate date = java.time.LocalDate.parse(key);
+            java.time.LocalDate today = java.time.LocalDate.now();
+            if (date.equals(today)) {
+                return "Hôm nay";
+            }
+            if (date.equals(today.minusDays(1))) {
+                return "Hôm qua";
+            }
+            return date.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        } catch (Exception e) {
+            return key;
+        }
+    }
+
     public int getId() {
         return id;
     }
