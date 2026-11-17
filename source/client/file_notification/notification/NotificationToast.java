@@ -17,24 +17,31 @@ public class NotificationToast extends JWindow {
 
     private static NotificationToast activeToast = null;
 
-    public static synchronized void showNotification(JFrame parent, String type, String senderUsername,
-                                                      String senderFullName, String message,
-                                                      NotificationClickListener listener) {
+    // Thông báo chat riêng: dòng tiêu đề là "Họ tên (@username)"
+    public static void showNotification(JFrame parent, String type, String senderUsername,
+                                        String senderFullName, String message,
+                                        NotificationClickListener listener) {
+        showNotification(parent, type, senderFullName + " (@" + senderUsername + ")", message,
+                listener != null ? () -> listener.onClick(senderUsername) : null);
+    }
+
+    // Thông báo với tiêu đề tùy ý (chat nhóm dùng tên nhóm làm tiêu đề)
+    public static synchronized void showNotification(JFrame parent, String type, String title, String message,
+                                                     Runnable onClick) {
         // Đóng thông báo cũ nếu còn
         if (activeToast != null) {
             activeToast.dispose();
             activeToast = null;
         }
 
-        activeToast = new NotificationToast(parent, type, senderUsername, senderFullName, message, listener);
+        activeToast = new NotificationToast(parent, type, title, message, onClick);
         activeToast.setVisible(true);
 
         // Phát âm báo
         playChimeSound();
     }
 
-    private NotificationToast(JFrame parent, String type, String senderUsername, String senderFullName,
-                              String message, NotificationClickListener listener) {
+    private NotificationToast(JFrame parent, String type, String title, String message, Runnable onClick) {
         super(parent);
 
         setSize(320, 85);
@@ -92,7 +99,7 @@ public class NotificationToast extends JWindow {
         textPanel.setLayout(new BoxLayout(textPanel, BoxLayout.Y_AXIS));
         textPanel.setOpaque(false);
 
-        JLabel lblSender = new JLabel(senderFullName + " (@" + senderUsername + ")");
+        JLabel lblSender = new JLabel(title);
         lblSender.setFont(new Font("Segoe UI", Font.BOLD, 13));
         lblSender.setForeground(new Color(20, 20, 20));
 
@@ -130,8 +137,8 @@ public class NotificationToast extends JWindow {
         panel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                if (listener != null) {
-                    listener.onClick(senderUsername);
+                if (onClick != null) {
+                    onClick.run();
                 }
                 dispose();
             }

@@ -72,6 +72,28 @@ public class GroupListPanel extends JPanel {
         updating = false;
     }
 
+    // Tên nhóm theo id (null nếu không có trong danh sách)
+    public String getGroupName(int groupId) {
+        for (int i = 0; i < listModel.size(); i++) {
+            if (listModel.get(i).getId() == groupId) {
+                return listModel.get(i).getName();
+            }
+        }
+        return null;
+    }
+
+    // Chọn nhóm theo id, kích hoạt sự kiện mở nhóm như khi người dùng tự bấm
+    public void selectGroup(int groupId) {
+        for (int i = 0; i < listModel.size(); i++) {
+            GroupItem g = listModel.get(i);
+            if (g.getId() == groupId) {
+                groupJList.clearSelection();
+                groupJList.setSelectedValue(g, true);
+                return;
+            }
+        }
+    }
+
     // Có tin mới ở nhóm đang không mở
     public void addUnread(int groupId) {
         unreadMap.merge(groupId, 1, Integer::sum);

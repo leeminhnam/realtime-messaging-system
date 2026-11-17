@@ -6,6 +6,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import file_notification.controller.FileClientManager;
+import file_notification.notification.NotificationToast;
 import group_chat.model.GroupItem;
 import group_chat.model.MemberItem;
 import group_chat.view.CreateGroupDialog;
@@ -31,6 +32,7 @@ public class GroupChatController {
 
     private GroupMembersDialog membersDialog;
     private int pendingOpenGroupId = 0; // Nhóm vừa tạo, mở ngay khi danh sách nhóm được tải về
+    private Runnable showGroupTab; // MainFrame gán: chuyển sidebar sang tab Nhóm
 
     public GroupChatController(JFrame parent, GroupListPanel listView, GroupChatPanel chatView,
             UserListPanel userListPanel, PrintWriter writer, String currentUsername) {
@@ -74,6 +76,10 @@ public class GroupChatController {
                 FileClientManager.getInstance().sendGroupBytes(writer, groupId, wavBytes, fileName, "AUDIO", durationSeconds);
             }
         });
+    }
+
+    public void setShowGroupTab(Runnable showGroupTab) {
+        this.showGroupTab = showGroupTab;
     }
 
     // Gói này có phải của chat nhóm không
@@ -125,6 +131,7 @@ public class GroupChatController {
                     break;
                 case "RECEIVE_GROUP_MESSAGE":
                     onMessageArrived(data, true);
+                    showGroupNotification(data);
                     break;
                 case "CREATE_GROUP_RESPONSE":
                     if (success) pendingOpenGroupId = data.get("groupId").getAsInt();
@@ -424,6 +431,55 @@ public class GroupChatController {
         } else if (fromOthers) {
             listView.addUnread(groupId);
         }
+    }
+
+    // Hiện thông báo nổi cho tin nhóm, trừ khi người dùng đang nhìn đúng nhóm đó
+    private void showGroupNotification(JsonObject data) {
+        int groupId = data.get("groupId").getAsInt();
+        boolean watching = groupId == chatView.getCurrentGroupId() && chatView.isShowing() && parent.isActive();
+        if (watching) {
+            return;
+        }
+
+        String groupName = listView.getGroupName(groupId);
+        String title = groupName != null ? groupName : "Nhóm #" + groupId;
+        String sender = data.has("senderFullName") && !data.get("senderFullName").isJsonNull()
+                ? data.get("senderFullName").getAsString()
+                : data.get("sender").getAsString();
+
+        String type = "TEXT";
+        String text;
+        if (data.has("fileType") && !data.get("fileType").isJsonNull()) {
+            type = data.get("fileType").getAsString().toUpperCase();
+            String fileName = data.has("fileName") ? data.get("fileName").getAsString() : "";
+            switch (type) {
+                case "IMAGE":
+                    text = "đã gửi một hình ảnh";
+                    break;
+                case "AUDIO":
+                    text = "đã gửi một đoạn ghi âm";
+                    break;
+                case "VIDEO":
+                    text = "đã gửi một video";
+                    break;
+                default:
+                    text = "đã gửi tệp " + fileName;
+                    break;
+            }
+            text = sender + " " + text;
+        } else {
+            String content = data.has("content") ? data.get("content").getAsString() : "";
+            text = sender + ": " + content;
+        }
+
+        NotificationToast.showNotification(parent, type, title, text, () -> {
+            // Bấm vào thông báo thì chuyển sang tab Nhóm và mở nhóm đó
+            if (showGroupTab != null) {
+                showGroupTab.run();
+            }
+            listView.selectGroup(groupId);
+            parent.toFront();
+        });
     }
 
     // Tìm nhóm theo id trong danh sách

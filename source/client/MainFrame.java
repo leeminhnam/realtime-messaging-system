@@ -132,6 +132,7 @@ public class MainFrame extends JFrame {
         sidebarTabs.addChangeListener(e -> {
             centerLayout.show(centerPanel, sidebarTabs.getSelectedIndex() == 0 ? "PRIVATE" : "GROUP");
         });
+        groupChatController.setShowGroupTab(() -> sidebarTabs.setSelectedIndex(1));
 
         // Chọn một người trong danh bạ thì mở chat với người đó
         userListPanel.setUserSelectListener(userItem -> {
