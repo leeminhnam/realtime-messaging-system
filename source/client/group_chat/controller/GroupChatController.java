@@ -5,6 +5,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import file_notification.controller.FileClientManager;
 import group_chat.model.GroupItem;
 import group_chat.model.MemberItem;
 import group_chat.view.CreateGroupDialog;
@@ -56,6 +57,23 @@ public class GroupChatController {
 
         // Gõ tin nhắn rồi gửi
         chatView.getInputPanel().setSendMessageListener(this::sendGroupMessage);
+
+        // Gửi ảnh, video, tài liệu vào nhóm đang mở
+        chatView.getInputPanel().setSendFileListener((file, fileType) -> {
+            int groupId = chatView.getCurrentGroupId();
+            if (groupId != 0) {
+                FileClientManager.getInstance().sendGroupFile(writer, groupId, file, fileType);
+            }
+        });
+
+        // Gửi đoạn ghi âm vào nhóm đang mở
+        chatView.getInputPanel().setSendVoiceListener((wavBytes, durationSeconds) -> {
+            int groupId = chatView.getCurrentGroupId();
+            if (groupId != 0) {
+                String fileName = "voice_" + System.currentTimeMillis() + ".wav";
+                FileClientManager.getInstance().sendGroupBytes(writer, groupId, wavBytes, fileName, "AUDIO", durationSeconds);
+            }
+        });
     }
 
     // Gói này có phải của chat nhóm không
@@ -70,6 +88,7 @@ public class GroupChatController {
                 || "DELETE_GROUP_RESPONSE".equalsIgnoreCase(action)
                 || "GROUP_DELETED".equalsIgnoreCase(action)
                 || "SEND_GROUP_MESSAGE_RESPONSE".equalsIgnoreCase(action)
+                || "SEND_GROUP_FILE_RESPONSE".equalsIgnoreCase(action)
                 || "GET_GROUP_HISTORY_RESPONSE".equalsIgnoreCase(action)
                 || "RECEIVE_GROUP_MESSAGE".equalsIgnoreCase(action)
                 || "GROUP_UPDATED".equalsIgnoreCase(action);
@@ -100,6 +119,7 @@ public class GroupChatController {
                     if (success) onHistoryReceived(data);
                     break;
                 case "SEND_GROUP_MESSAGE_RESPONSE":
+                case "SEND_GROUP_FILE_RESPONSE":
                     if (success) onMessageArrived(data, false);
                     else showError(message);
                     break;

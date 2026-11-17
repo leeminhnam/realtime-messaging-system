@@ -3,6 +3,7 @@ package database;
 import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
@@ -54,7 +55,8 @@ public class DatabaseManager {
                 + "FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE"
                 + ");";
 
-        // file_attachments: thông tin tệp, nội dung nằm trong thư mục uploads
+        // file_attachments: thông tin tệp, nội dung nằm trong thư mục uploads.
+        // Tệp gửi trong nhóm có group_id > 0 và conversation_id = 0
         String createFileAttachmentsTable = "CREATE TABLE IF NOT EXISTS file_attachments ("
                 + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                 + "conversation_id INTEGER NOT NULL, "
@@ -65,6 +67,7 @@ public class DatabaseManager {
                 + "file_type TEXT NOT NULL, " // 'IMAGE', 'AUDIO', 'VIDEO', 'FILE'
                 + "file_size INTEGER NOT NULL, "
                 + "stored_path TEXT NOT NULL, "
+                + "group_id INTEGER NOT NULL DEFAULT 0, "
                 + "created_at DATETIME DEFAULT CURRENT_TIMESTAMP, "
                 + "FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE"
                 + ");";
@@ -124,10 +127,16 @@ public class DatabaseManager {
             stmt.execute(createGroupMembersTable);
             stmt.execute(createGroupMessagesTable);
 
+            // CSDL tạo từ bản cũ chưa có cột group_id thì bổ sung
+            if (!hasColumn(stmt, "file_attachments", "group_id")) {
+                stmt.execute("ALTER TABLE file_attachments ADD COLUMN group_id INTEGER NOT NULL DEFAULT 0;");
+            }
+
             // Tạo chỉ mục
             stmt.execute(createConvIndex);
             stmt.execute(createMessagesIndex);
             stmt.execute(createFileIndex);
+            stmt.execute("CREATE INDEX IF NOT EXISTS idx_files_group ON file_attachments(group_id);");
             stmt.execute(createGroupMembersIndex);
             stmt.execute(createGroupMessagesIndex);
 
@@ -145,5 +154,17 @@ public class DatabaseManager {
             System.err.println("[DATABASE] Lỗi khởi tạo CSDL: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    // Kiểm tra bảng đã có cột hay chưa
+    private static boolean hasColumn(Statement stmt, String table, String column) throws SQLException {
+        try (ResultSet rs = stmt.executeQuery("PRAGMA table_info(" + table + ");")) {
+            while (rs.next()) {
+                if (column.equalsIgnoreCase(rs.getString("name"))) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

@@ -25,12 +25,13 @@
 Hệ thống bao gồm 4 module chức năng chính:
 - **Module 1: Quản lý tài khoản & Trạng thái người dùng (`account`)**: Đăng ký, đăng nhập, đăng xuất, quản lý hồ sơ cá nhân, xem danh sách người dùng và theo dõi trạng thái online/offline, thông báo tin nhắn theo thời gian thực.
 - **Module 2: Trò chuyện riêng tư (`private-chat`)**: Gửi và nhận tin nhắn riêng (1-1) trong thời gian thực, quản lý danh sách hội thoại, xem lịch sử tin nhắn và trạng thái đã đọc.
-- **Module 3: Trò chuyện nhóm (`group-chat`)**: Tạo nhóm trò chuyện (tối thiểu 3 người), thêm/xóa thành viên, phân quyền trưởng nhóm, trưởng nhóm xóa (giải tán) nhóm, nhắn tin nhóm trong thời gian thực và lưu trữ lịch sử tin nhắn nhóm.
+- **Module 3: Trò chuyện nhóm (`group-chat`)**: Tạo nhóm trò chuyện (tối thiểu 3 người), thêm/xóa thành viên, phân quyền trưởng nhóm, trưởng nhóm xóa (giải tán) nhóm, nhắn tin nhóm trong thời gian thực (văn bản, ảnh, video, tài liệu, ghi âm) và lưu trữ lịch sử tin nhắn nhóm.
 - **Module 4: Truyền tải file & Thông báo (`file-notification`)**:
   - Hỗ trợ **Hình ảnh (`IMAGE`)**: Xem trước thumbnail ngay trên bong bóng chat, phóng to/thu nhỏ (Zoom Viewer), lưu ảnh về máy.
   - Hỗ trợ **Đoạn ghi âm (`AUDIO / VOICE NOTE`)**: Thu âm trực tiếp bằng microphone qua Java Sound API, phát lại âm thanh trực tiếp trong ứng dụng.
   - Hỗ trợ **Video (`VIDEO`)**: Xem video tự động bằng trình phát mặc định của hệ điều hành.
   - Hỗ trợ **Tệp tin tài liệu (`FILE`)**: Tải về các định dạng file đính kèm.
+  - Gửi được trong **cả chat 1-1 và chat nhóm**. Tệp trong nhóm chỉ thành viên nhóm mới tải được, và bị xóa cùng nhóm.
   - **Hệ thống thông báo thời gian thực (`Notification Toast + Chime Sound`)**: Hiển thị popup góc màn hình kèm tiếng chuông du dương khi có tin/file mới, click để chuyển ngay tới đoạn chat.
 
 **Cấu trúc logic tổng quát:**
@@ -74,7 +75,7 @@ java -cp "out/production/realtime-messaging-system;source/lib/*" ClientMain
 ```
 
 ### 4. Kiểm thử nhanh
-Bộ test (`source/test/`) bao phủ **cả 4 module** với tổng cộng **163 ca kiểm thử**, không cần thư viện test ngoài. Test dùng CSDL SQLite và thư mục upload tạm (thông qua `-Dchatnest.db.dir`, tự xóa khi kết thúc) nên **không ảnh hưởng** tới `messaging_app.db` thật. Handler được test trực tiếp bằng gói JSON, không cần mở socket hay giao diện.
+Bộ test (`source/test/`) bao phủ **cả 4 module** với tổng cộng **175 ca kiểm thử**, không cần thư viện test ngoài. Test dùng CSDL SQLite và thư mục upload tạm (thông qua `-Dchatnest.db.dir`, tự xóa khi kết thúc) nên **không ảnh hưởng** tới `messaging_app.db` thật. Handler được test trực tiếp bằng gói JSON, không cần mở socket hay giao diện.
 
 ```bash
 # Biên dịch và chạy toàn bộ test của 4 module (tại thư mục gốc dự án, dùng Git Bash)
@@ -93,7 +94,7 @@ java -Dfile.encoding=UTF-8 -cp "out_test;source/lib/*" private_chat.PrivateChatM
 # Module 3 - Group chat (66 ca)
 java -Dfile.encoding=UTF-8 -cp "out_test;source/lib/*" group_chat.GroupChatModuleTest
 
-# Module 4 - File & Notification (33 ca)
+# Module 4 - File & Notification (45 ca)
 java -Dfile.encoding=UTF-8 -cp "out_test;source/lib/*" file_notification.FileNotificationModuleTest
 ```
 
@@ -102,14 +103,14 @@ Kiểm thử mạng (khởi động Server thật và nhiều Client socket: k�
 java -Dfile.encoding=UTF-8 -cp "out_test;source/lib/*" NetworkTest
 ```
 
-Kết quả mong đợi khi chạy `AllTests`: `Kết quả: 163 đạt, 0 lỗi` (thoát với mã 1 nếu có ca lỗi). Mỗi ca in `[PASS]` hoặc `[FAIL]` kèm mô tả. Phạm vi kiểm thử:
+Kết quả mong đợi khi chạy `AllTests`: `Kết quả: 175 đạt, 0 lỗi` (thoát với mã 1 nếu có ca lỗi). Mỗi ca in `[PASS]` hoặc `[FAIL]` kèm mô tả. Phạm vi kiểm thử:
 
 | Module | File test | Nội dung kiểm tra |
 |--------|-----------|-------------------|
 | 1 - Account | `account/AccountModuleTest` | `UserDAO`: đăng ký, chặn trùng username (không phân biệt hoa/thường), mật khẩu băm BCrypt, đăng nhập đúng/sai/không tồn tại, ONLINE/OFFLINE, cập nhật hồ sơ. `AccountHandler`: `REGISTER`, `LOGIN`, `UPDATE_PROFILE`, `GET_USER_LIST`, JSON sai định dạng. Cấu trúc gói broadcast `USER_STATUS_CHANGE` |
 | 2 - Private chat | `private_chat/PrivateChatModuleTest` | `ConversationDAO`: một cặp user chỉ có một đoạn chat dù đảo thứ tự/hoa thường, chặn tự chat. `MessageDAO`: lưu, giới hạn và thứ tự lịch sử, đếm/đánh dấu đã đọc. `PrivateChatHandler`: kiểm tra đầu vào, chuyển tiếp realtime + thông báo cho người nhận online, cắt nội dung thông báo dài, lưu tin cho người nhận offline, lịch sử tự đánh dấu đã đọc |
 | 3 - Group chat | `group_chat/GroupChatModuleTest` | `GroupDAO`: tạo nhóm, vai trò LEADER/MEMBER, thêm/xóa thành viên, chuyển quyền, xóa nhóm. `GroupMessageDAO`: lưu và lịch sử. `GroupChatHandler`: tạo nhóm (lọc trùng/user lạ, tối thiểu 3 người), phân quyền trưởng nhóm khi thêm/xóa/chuyển quyền, quy tắc rời nhóm, chỉ trưởng nhóm được xóa nhóm (gói `GROUP_DELETED` tới thành viên), gửi tin chuyển tiếp cho thành viên online (trừ người gửi), chặn người ngoài nhóm, gói `GROUP_UPDATED` |
-| 4 - File & thông báo | `file_notification/FileNotificationModuleTest` | `FileAttachmentDAO`: lưu và truy vấn metadata. `FileNotificationHandler`: kiểm tra đầu vào (kể cả Base64 sai), lưu tệp ra đĩa với tên đã làm sạch, tin nhắn media JSON, thông báo `RECEIVE_NOTIFICATION` theo từng loại IMAGE/VIDEO/AUDIO/FILE, tải file khứ hồi khớp bản gốc, tệp mất trên đĩa |
+| 4 - File & thông báo | `file_notification/FileNotificationModuleTest` | `FileAttachmentDAO`: lưu và truy vấn metadata. `FileNotificationHandler`: kiểm tra đầu vào (kể cả Base64 sai), lưu tệp ra đĩa với tên đã làm sạch, tin nhắn media JSON, thông báo `RECEIVE_NOTIFICATION` theo từng loại IMAGE/VIDEO/AUDIO/FILE, tải file khứ hồi khớp bản gốc, tệp mất trên đĩa. Gửi tệp/ghi âm vào nhóm (`SEND_GROUP_FILE`): chặn người ngoài nhóm, chuyển `RECEIVE_GROUP_MESSAGE` cho thành viên online, chỉ thành viên được tải, xóa nhóm thì xóa cả tệp |
 
 > Phạm vi hiện tại là tầng server (DAO + handler). Chưa có test giao diện Swing và test tích hợp qua socket thật (xem mục Hướng phát triển).
 
@@ -142,6 +143,7 @@ Server phân luồng gói tin theo `action` tới handler của từng module. A
 | 3 - Group chat | `ADD_GROUP_MEMBER`, `REMOVE_GROUP_MEMBER`, `TRANSFER_LEADER`, `LEAVE_GROUP`, `DELETE_GROUP` | nhóm, thành viên | Phản hồi dạng `<ACTION>_RESPONSE` |
 | 3 - Group chat | `SEND_GROUP_MESSAGE`, `GET_GROUP_HISTORY` | nhóm, nội dung | Phản hồi + đẩy tin tới các thành viên online |
 | 4 - File | `SEND_FILE` | người nhận, tên/loại/kích thước file, nội dung Base64 | `SEND_FILE_RESPONSE` |
+| 4 - File | `SEND_GROUP_FILE` | `groupId`, tên/loại/kích thước file, thời lượng ghi âm, nội dung Base64 | `SEND_GROUP_FILE_RESPONSE` + đẩy `RECEIVE_GROUP_MESSAGE` tới các thành viên online |
 | 4 - File | `DOWNLOAD_FILE` | định danh file | `DOWNLOAD_FILE_RESPONSE` |
 
 **Gói tin Server chủ động đẩy xuống Client (không cần request):**
@@ -167,7 +169,7 @@ Thực nghiệm chạy trên một máy Windows 11 (Intel Core i5-11400H, 16 GB 
 
 ### 1. Kiểm thử chức năng (`AllTests`)
 
-Kết quả: **163/163 ca đạt**, chia theo bốn module: Account 26, Private chat 38, Group chat 66, File & Notification 33. Ảnh dưới đây giữ nguyên các dòng log thật; mỗi module chỉ hiện 3 ca đầu.
+Kết quả: **175/175 ca đạt**, chia theo bốn module: Account 26, Private chat 38, Group chat 66, File & Notification 45. Ảnh dưới đây giữ nguyên các dòng log thật; mỗi module chỉ hiện 3 ca đầu.
 
 ![Kết quả AllTests](./statics/results/test_alltests.png)
 

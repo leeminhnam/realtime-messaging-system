@@ -44,28 +44,52 @@ public class FileClientManager {
 
     // Gửi một tệp trên máy lên Server
     public boolean sendFile(PrintWriter writer, String receiver, File file, String fileType, int duration, String caption) {
-        if (writer == null || file == null || !file.exists()) {
-            return false;
-        }
-
-        try {
-            // Tối đa 20 MB vì cả tệp nằm trong một dòng JSON
-            if (file.length() > 20 * 1024 * 1024) {
-                JOptionPane.showMessageDialog(null, "Dung lượng tệp vượt quá giới hạn 20MB!", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
-                return false;
-            }
-
-            byte[] fileBytes = Files.readAllBytes(file.toPath());
-            return sendBytes(writer, receiver, fileBytes, file.getName(), fileType, duration, caption);
-        } catch (IOException e) {
-            System.err.println("[FILE CLIENT] Lỗi đọc file để gửi: " + e.getMessage());
-            return false;
-        }
+        byte[] fileBytes = readForUpload(file);
+        return fileBytes != null && sendBytes(writer, receiver, fileBytes, file.getName(), fileType, duration, caption);
     }
 
     // Gửi dữ liệu đã có trong bộ nhớ, ví dụ đoạn ghi âm
     public boolean sendBytes(PrintWriter writer, String receiver, byte[] bytes, String fileName, String fileType,
                              int duration, String caption) {
+        JsonObject target = new JsonObject();
+        target.addProperty("receiver", receiver);
+        return sendPacket(writer, "SEND_FILE", target, bytes, fileName, fileType, duration, caption);
+    }
+
+    // Gửi một tệp trên máy vào nhóm
+    public boolean sendGroupFile(PrintWriter writer, int groupId, File file, String fileType) {
+        byte[] fileBytes = readForUpload(file);
+        return fileBytes != null && sendGroupBytes(writer, groupId, fileBytes, file.getName(), fileType, 0);
+    }
+
+    // Gửi dữ liệu trong bộ nhớ (ví dụ đoạn ghi âm) vào nhóm
+    public boolean sendGroupBytes(PrintWriter writer, int groupId, byte[] bytes, String fileName, String fileType,
+                                  int duration) {
+        JsonObject target = new JsonObject();
+        target.addProperty("groupId", groupId);
+        return sendPacket(writer, "SEND_GROUP_FILE", target, bytes, fileName, fileType, duration, "");
+    }
+
+    // Đọc tệp để gửi, tối đa 20 MB vì cả tệp nằm trong một dòng JSON
+    private byte[] readForUpload(File file) {
+        if (file == null || !file.exists()) {
+            return null;
+        }
+        if (file.length() > 20 * 1024 * 1024) {
+            JOptionPane.showMessageDialog(null, "Dung lượng tệp vượt quá giới hạn 20MB!", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+            return null;
+        }
+        try {
+            return Files.readAllBytes(file.toPath());
+        } catch (IOException e) {
+            System.err.println("[FILE CLIENT] Lỗi đọc file để gửi: " + e.getMessage());
+            return null;
+        }
+    }
+
+    // Đóng gói tệp thành JSON (Base64) rồi gửi. target chứa receiver hoặc groupId
+    private boolean sendPacket(PrintWriter writer, String action, JsonObject target, byte[] bytes, String fileName,
+                               String fileType, int duration, String caption) {
         if (writer == null || bytes == null || bytes.length == 0) {
             return false;
         }
@@ -74,9 +98,8 @@ public class FileClientManager {
             String base64Data = Base64.getEncoder().encodeToString(bytes);
 
             JsonObject req = new JsonObject();
-            req.addProperty("action", "SEND_FILE");
-            JsonObject data = new JsonObject();
-            data.addProperty("receiver", receiver);
+            req.addProperty("action", action);
+            JsonObject data = target.deepCopy();
             data.addProperty("fileName", fileName);
             data.addProperty("fileType", fileType != null ? fileType.toUpperCase() : "FILE");
             data.addProperty("fileSize", bytes.length);

@@ -5,6 +5,10 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import file_notification.dao.FileAttachmentDAO;
 import file_notification.model.FileAttachment;
+import group_chat.dao.GroupDAO;
+import group_chat.dao.GroupMessageDAO;
+import group_chat.handler.GroupChatHandler;
+import group_chat.model.GroupMessage;
 import private_chat.dao.ConversationDAO;
 import private_chat.dao.MessageDAO;
 import private_chat.model.Conversation;
@@ -27,6 +31,7 @@ public class FileNotificationHandler {
     // Các action về tệp
     public static boolean isFileNotificationAction(String action) {
         return "SEND_FILE".equalsIgnoreCase(action)
+                || "SEND_GROUP_FILE".equalsIgnoreCase(action)
                 || "DOWNLOAD_FILE".equalsIgnoreCase(action);
     }
 
@@ -46,8 +51,12 @@ public class FileNotificationHandler {
                 handleSendFile(data, writer, currentUsername, onlineClients);
                 break;
 
+            case "SEND_GROUP_FILE":
+                handleSendGroupFile(data, writer, currentUsername, onlineClients);
+                break;
+
             case "DOWNLOAD_FILE":
-                handleDownloadFile(data, writer);
+                handleDownloadFile(data, writer, currentUsername);
                 break;
 
             default:
@@ -86,21 +95,8 @@ public class FileNotificationHandler {
             byte[] fileBytes = Base64.getDecoder().decode(base64Data);
             long fileSize = fileBytes.length;
 
-            // Tạo thư mục uploads nếu chưa có
-            File uploadFolder = new File(UPLOAD_DIR);
-            if (!uploadFolder.exists()) {
-                uploadFolder.mkdirs();
-            }
-
-            // Thêm thời gian và chuỗi ngẫu nhiên vào tên để không bị trùng
-            String safeFileName = originalFileName.replaceAll("[^a-zA-Z0-9._-]", "_");
-            String storedFileName = System.currentTimeMillis() + "_" + UUID.randomUUID().toString().substring(0, 8) + "_" + safeFileName;
-            File targetFile = new File(uploadFolder, storedFileName);
-
             // Ghi tệp ra đĩa
-            try (FileOutputStream fos = new FileOutputStream(targetFile)) {
-                fos.write(fileBytes);
-            }
+            File targetFile = storeUpload(originalFileName, fileBytes);
 
             // Tìm hoặc tạo cuộc trò chuyện giữa 2 người
             Conversation conv = ConversationDAO.getOrCreateConversation(senderUsername, receiverUsername);
@@ -119,17 +115,7 @@ public class FileNotificationHandler {
                 return;
             }
 
-            // Nội dung tin nhắn chỉ là JSON mô tả tệp, không chứa dữ liệu tệp
-            JsonObject mediaContentJson = new JsonObject();
-            mediaContentJson.addProperty("isMedia", true);
-            mediaContentJson.addProperty("fileId", attachment.getId());
-            mediaContentJson.addProperty("fileType", fileType);
-            mediaContentJson.addProperty("fileName", originalFileName);
-            mediaContentJson.addProperty("fileSize", fileSize);
-            mediaContentJson.addProperty("duration", duration);
-            mediaContentJson.addProperty("caption", caption);
-
-            String contentString = gson.toJson(mediaContentJson);
+            String contentString = buildMediaContent(attachment, duration, caption);
 
             // Lưu vào bảng messages
             Message savedMsg = MessageDAO.saveMessage(conv.getId(), senderUsername, contentString);
@@ -210,8 +196,108 @@ public class FileNotificationHandler {
         }
     }
 
+    // SEND_GROUP_FILE: lưu tệp/ghi âm, tạo tin nhắn nhóm rồi chuyển cho các thành viên online.
+    // Phản hồi và gói đẩy có cùng dạng với tin nhắn nhóm thường, chỉ khác content là JSON media.
+    private static void handleSendGroupFile(JsonObject data, PrintWriter senderWriter, String senderUsername,
+                                            Map<String, PrintWriter> onlineClients) {
+        final String response = "SEND_GROUP_FILE_RESPONSE";
+        if (!data.has("groupId") || !data.has("fileName") || !data.has("base64Data")) {
+            sendResponse(senderWriter, response, "FAILED", "Thiếu thông tin tệp gửi!", null);
+            return;
+        }
+
+        int groupId = data.get("groupId").getAsInt();
+        String originalFileName = data.get("fileName").getAsString().trim();
+        String fileType = data.has("fileType") ? data.get("fileType").getAsString().toUpperCase() : "FILE";
+        String base64Data = data.get("base64Data").getAsString();
+        int duration = data.has("duration") ? data.get("duration").getAsInt() : 0;
+        String caption = data.has("caption") ? data.get("caption").getAsString() : "";
+
+        if (originalFileName.isEmpty() || base64Data.isEmpty()) {
+            sendResponse(senderWriter, response, "FAILED", "Dữ liệu tệp không hợp lệ!", null);
+            return;
+        }
+        if (GroupDAO.getRole(groupId, senderUsername) == null) {
+            sendResponse(senderWriter, response, "FAILED", "Bạn không thuộc nhóm này!", null);
+            return;
+        }
+
+        byte[] fileBytes;
+        try {
+            fileBytes = Base64.getDecoder().decode(base64Data);
+        } catch (IllegalArgumentException e) {
+            sendResponse(senderWriter, response, "FAILED", "Dữ liệu tệp không hợp lệ!", null);
+            return;
+        }
+
+        try {
+            File targetFile = storeUpload(originalFileName, fileBytes);
+            FileAttachment attachment = FileAttachmentDAO.saveGroupFileAttachment(
+                    groupId, senderUsername, originalFileName, fileType, fileBytes.length, targetFile.getAbsolutePath());
+            if (attachment == null) {
+                targetFile.delete();
+                sendResponse(senderWriter, response, "FAILED", "Lỗi lưu thông tin tệp vào CSDL!", null);
+                return;
+            }
+
+            GroupMessage saved = GroupMessageDAO.saveMessage(groupId, senderUsername,
+                    buildMediaContent(attachment, duration, caption));
+            if (saved == null) {
+                sendResponse(senderWriter, response, "FAILED", "Lỗi lưu tin nhắn nhóm vào CSDL!", null);
+                return;
+            }
+            FileAttachmentDAO.updateMessageId(attachment.getId(), saved.getId());
+
+            JsonObject msgData = GroupChatHandler.messageToJson(saved);
+            msgData.addProperty("fileId", attachment.getId());
+            msgData.addProperty("fileType", fileType);
+            msgData.addProperty("fileName", originalFileName);
+            msgData.addProperty("fileSize", fileBytes.length);
+            msgData.addProperty("duration", duration);
+
+            sendResponse(senderWriter, response, "SUCCESS", "Gửi tệp vào nhóm thành công!", msgData);
+            System.out.println("[FILE UPLOAD] @" + senderUsername + " đã gửi tệp [" + fileType + "] "
+                    + originalFileName + " (" + (fileBytes.length / 1024) + " KB) vào nhóm #" + groupId);
+
+            GroupChatHandler.forwardToMembers(groupId, senderUsername, msgData, onlineClients);
+        } catch (IOException e) {
+            System.err.println("[FILE LỖI] Lỗi lưu tệp nhóm: " + e.getMessage());
+            sendResponse(senderWriter, response, "FAILED", "Lỗi server khi lưu tệp: " + e.getMessage(), null);
+        }
+    }
+
+    // Ghi tệp vào thư mục uploads với tên đã làm sạch, thêm thời gian và chuỗi ngẫu nhiên để không trùng
+    private static File storeUpload(String originalFileName, byte[] fileBytes) throws IOException {
+        File uploadFolder = new File(UPLOAD_DIR);
+        if (!uploadFolder.exists()) {
+            uploadFolder.mkdirs();
+        }
+
+        String safeFileName = originalFileName.replaceAll("[^a-zA-Z0-9._-]", "_");
+        String storedFileName = System.currentTimeMillis() + "_" + UUID.randomUUID().toString().substring(0, 8) + "_" + safeFileName;
+        File targetFile = new File(uploadFolder, storedFileName);
+
+        try (FileOutputStream fos = new FileOutputStream(targetFile)) {
+            fos.write(fileBytes);
+        }
+        return targetFile;
+    }
+
+    // Nội dung tin nhắn chỉ là JSON mô tả tệp, không chứa dữ liệu tệp
+    private static String buildMediaContent(FileAttachment attachment, int duration, String caption) {
+        JsonObject media = new JsonObject();
+        media.addProperty("isMedia", true);
+        media.addProperty("fileId", attachment.getId());
+        media.addProperty("fileType", attachment.getFileType());
+        media.addProperty("fileName", attachment.getFileName());
+        media.addProperty("fileSize", attachment.getFileSize());
+        media.addProperty("duration", duration);
+        media.addProperty("caption", caption);
+        return gson.toJson(media);
+    }
+
     // DOWNLOAD_FILE: đọc tệp trong uploads, mã hóa Base64 rồi gửi về
-    private static void handleDownloadFile(JsonObject data, PrintWriter writer) {
+    private static void handleDownloadFile(JsonObject data, PrintWriter writer, String currentUsername) {
         if (!data.has("fileId")) {
             sendResponse(writer, "DOWNLOAD_FILE_RESPONSE", "FAILED", "Thiếu fileId!", null);
             return;
@@ -222,6 +308,12 @@ public class FileNotificationHandler {
 
         if (attachment == null) {
             sendResponse(writer, "DOWNLOAD_FILE_RESPONSE", "FAILED", "Không tìm thấy tệp yêu cầu!", null);
+            return;
+        }
+
+        // Tệp trong nhóm chỉ thành viên nhóm mới được tải
+        if (attachment.getGroupId() > 0 && GroupDAO.getRole(attachment.getGroupId(), currentUsername) == null) {
+            sendResponse(writer, "DOWNLOAD_FILE_RESPONSE", "FAILED", "Bạn không có quyền tải tệp này!", null);
             return;
         }
 

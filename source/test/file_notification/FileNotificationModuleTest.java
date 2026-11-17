@@ -5,6 +5,8 @@ import com.google.gson.JsonParser;
 import file_notification.dao.FileAttachmentDAO;
 import file_notification.handler.FileNotificationHandler;
 import file_notification.model.FileAttachment;
+import group_chat.dao.GroupDAO;
+import group_chat.dao.GroupMessageDAO;
 import private_chat.dao.ConversationDAO;
 import private_chat.dao.MessageDAO;
 import private_chat.model.Message;
@@ -16,6 +18,7 @@ import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static testutil.TestSupport.check;
@@ -33,14 +36,20 @@ public class FileNotificationModuleTest {
 
     public static void run() {
         TestSupport.section("MODULE 4 - FILE & NOTIFICATION");
-        TestSupport.registerUsers("fn_ann", "fn_bao");
+        TestSupport.registerUsers("fn_ann", "fn_bao", "fn_cuong", "fn_out");
 
         testFileAttachmentDao();
         testHandlerValidation();
         testHandlerSendAndNotify();
         testHandlerNotificationTexts();
         testHandlerDownload();
+        testHandlerGroupFile();
         testIsFileNotificationAction();
+    }
+
+    static JsonObject sendGroupFile(Capture sender, String user, String dataJson, Map<String, PrintWriter> online) {
+        FileNotificationHandler.handleFileNotificationAction(request("SEND_GROUP_FILE", dataJson), sender.writer, user, online);
+        return sender.last();
     }
 
     static String b64(String text) {
@@ -210,9 +219,81 @@ public class FileNotificationModuleTest {
         check("handler DOWNLOAD: tệp đã mất trên đĩa -> FAILED", isStatus(dl.last(), "DOWNLOAD_FILE_RESPONSE", "FAILED"));
     }
 
+    // ---------- Handler: gửi tệp / ghi âm trong nhóm ----------
+    static void testHandlerGroupFile() {
+        int gid = GroupDAO.createGroup("Nhóm gửi tệp", "fn_ann", List.of("fn_bao", "fn_cuong"));
+        Map<String, PrintWriter> online = new HashMap<>();
+        Capture bao = new Capture();
+        Capture outsider = new Capture();
+        online.put("fn_bao", bao.writer);
+        online.put("fn_out", outsider.writer);
+
+        check("group file: thiếu groupId -> FAILED",
+                isStatus(sendGroupFile(new Capture(), "fn_ann",
+                        "{\"fileName\":\"a.wav\",\"base64Data\":\"" + b64("x") + "\"}", online),
+                        "SEND_GROUP_FILE_RESPONSE", "FAILED"));
+        check("group file: người ngoài nhóm gửi -> FAILED",
+                isStatus(sendGroupFile(new Capture(), "fn_out",
+                        "{\"groupId\":" + gid + ",\"fileName\":\"a.wav\",\"base64Data\":\"" + b64("x") + "\"}", online),
+                        "SEND_GROUP_FILE_RESPONSE", "FAILED"));
+        check("group file: Base64 không hợp lệ -> FAILED",
+                isStatus(sendGroupFile(new Capture(), "fn_ann",
+                        "{\"groupId\":" + gid + ",\"fileName\":\"a.wav\",\"base64Data\":\"@@sai@@\"}", online),
+                        "SEND_GROUP_FILE_RESPONSE", "FAILED"));
+
+        Capture ann = new Capture();
+        online.put("fn_ann", ann.writer);
+        String voice = "du lieu ghi am";
+        JsonObject res = sendGroupFile(new Capture(), "fn_ann",
+                "{\"groupId\":" + gid + ",\"fileName\":\"voice_1.wav\",\"fileType\":\"audio\",\"duration\":5,\"base64Data\":\""
+                        + b64(voice) + "\"}", online);
+        check("group file: thành viên gửi ghi âm -> SUCCESS", isStatus(res, "SEND_GROUP_FILE_RESPONSE", "SUCCESS"));
+
+        JsonObject data = res.getAsJsonObject("data");
+        JsonObject media = JsonParser.parseString(data.get("content").getAsString()).getAsJsonObject();
+        check("group file: tin nhắn nhóm có content là JSON media (AUDIO, 5s, đúng fileId)",
+                data.get("groupId").getAsInt() == gid && "fn_ann".equals(data.get("sender").getAsString())
+                        && media.get("isMedia").getAsBoolean() && "AUDIO".equals(media.get("fileType").getAsString())
+                        && media.get("duration").getAsInt() == 5
+                        && media.get("fileId").getAsInt() == data.get("fileId").getAsInt());
+
+        FileAttachment att = FileAttachmentDAO.getFileAttachmentById(data.get("fileId").getAsInt());
+        File stored = new File(att.getStoredPath());
+        check("group file: tệp ghi ra đĩa, gắn groupId và messageId của tin nhắn nhóm",
+                stored.exists() && att.getGroupId() == gid && att.getMessageId() == data.get("id").getAsInt());
+
+        JsonObject recv = bao.find("RECEIVE_GROUP_MESSAGE");
+        check("group file: thành viên online nhận RECEIVE_GROUP_MESSAGE kèm tệp",
+                recv != null && recv.getAsJsonObject("data").get("fileId").getAsInt() == att.getId());
+        check("group file: người gửi và người ngoài nhóm không nhận gói đẩy",
+                ann.find("RECEIVE_GROUP_MESSAGE") == null && outsider.find("RECEIVE_GROUP_MESSAGE") == null);
+        check("group file: tin nhắn tệp nằm trong lịch sử nhóm",
+                GroupMessageDAO.getHistory(gid, 50).stream().anyMatch(m -> m.getId() == data.get("id").getAsInt()));
+
+        Capture dl = new Capture();
+        FileNotificationHandler.handleFileNotificationAction(
+                request("DOWNLOAD_FILE", "{\"fileId\":" + att.getId() + "}"), dl.writer, "fn_cuong", online);
+        String decoded = isStatus(dl.last(), "DOWNLOAD_FILE_RESPONSE", "SUCCESS")
+                ? new String(Base64.getDecoder().decode(dl.last().getAsJsonObject("data").get("base64Data").getAsString()),
+                        StandardCharsets.UTF_8)
+                : "";
+        check("group file: thành viên tải về đúng nội dung gốc", voice.equals(decoded));
+
+        dl.clear();
+        FileNotificationHandler.handleFileNotificationAction(
+                request("DOWNLOAD_FILE", "{\"fileId\":" + att.getId() + "}"), dl.writer, "fn_out", online);
+        check("group file: người ngoài nhóm không tải được tệp của nhóm",
+                isStatus(dl.last(), "DOWNLOAD_FILE_RESPONSE", "FAILED"));
+
+        GroupDAO.deleteGroup(gid);
+        check("group file: xóa nhóm thì xóa luôn bản ghi tệp và tệp trên đĩa",
+                FileAttachmentDAO.getFileAttachmentById(att.getId()) == null && !stored.exists());
+    }
+
     static void testIsFileNotificationAction() {
-        check("isFileNotificationAction: nhận SEND_FILE và DOWNLOAD_FILE",
+        check("isFileNotificationAction: nhận SEND_FILE, SEND_GROUP_FILE và DOWNLOAD_FILE",
                 FileNotificationHandler.isFileNotificationAction("send_file")
+                        && FileNotificationHandler.isFileNotificationAction("SEND_GROUP_FILE")
                         && FileNotificationHandler.isFileNotificationAction("DOWNLOAD_FILE"));
         check("isFileNotificationAction: từ chối action module khác",
                 !FileNotificationHandler.isFileNotificationAction("SEND_PRIVATE_MESSAGE"));

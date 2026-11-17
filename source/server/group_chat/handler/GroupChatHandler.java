@@ -312,8 +312,13 @@ public class GroupChatHandler {
 
         JsonObject msgData = messageToJson(saved);
         sendResponse(writer, "SEND_GROUP_MESSAGE_RESPONSE", "SUCCESS", "Gửi tin nhắn nhóm thành công!", msgData);
+        forwardToMembers(saved.getGroupId(), currentUsername, msgData, onlineClients);
+    }
 
-        // Chuyển tiếp cho các thành viên khác đang online
+    // Đẩy RECEIVE_GROUP_MESSAGE tới các thành viên online, trừ người gửi.
+    // Module tệp cũng dùng hàm này khi gửi tệp/ghi âm vào nhóm.
+    public static void forwardToMembers(int groupId, String senderUsername, JsonObject msgData,
+            Map<String, PrintWriter> onlineClients) {
         JsonObject receivePacket = new JsonObject();
         receivePacket.addProperty("action", "RECEIVE_GROUP_MESSAGE");
         receivePacket.addProperty("status", "SUCCESS");
@@ -321,7 +326,7 @@ public class GroupChatHandler {
         String packet = gson.toJson(receivePacket);
 
         for (String member : getMemberUsernames(groupId)) {
-            if (!member.equalsIgnoreCase(currentUsername)) {
+            if (!member.equalsIgnoreCase(senderUsername)) {
                 PrintWriter memberWriter = findWriter(onlineClients, member);
                 if (memberWriter != null) {
                     memberWriter.println(packet);
@@ -424,7 +429,7 @@ public class GroupChatHandler {
     }
 
     // Đổi GroupMessage thành JSON gửi về Client
-    private static JsonObject messageToJson(GroupMessage m) {
+    public static JsonObject messageToJson(GroupMessage m) {
         JsonObject obj = new JsonObject();
         obj.addProperty("id", m.getId());
         obj.addProperty("groupId", m.getGroupId());

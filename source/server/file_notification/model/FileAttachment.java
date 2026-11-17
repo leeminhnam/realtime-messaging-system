@@ -11,6 +11,7 @@ public class FileAttachment {
     private long fileSize;
     private String storedPath;
     private String createdAt;
+    private int groupId; // > 0 nếu là tệp gửi trong nhóm
 
     public FileAttachment() {
     }
@@ -107,5 +108,13 @@ public class FileAttachment {
 
     public void setCreatedAt(String createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public int getGroupId() {
+        return groupId;
+    }
+
+    public void setGroupId(int groupId) {
+        this.groupId = groupId;
     }
 }

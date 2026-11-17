@@ -1,9 +1,11 @@
 package group_chat.dao;
 
 import database.DatabaseManager;
+import file_notification.dao.FileAttachmentDAO;
 import group_chat.model.ChatGroup;
 import group_chat.model.GroupMember;
 
+import java.io.File;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -100,9 +102,11 @@ public class GroupDAO {
         return setRole(groupId, oldLeader, MEMBER) && setRole(groupId, newLeader, LEADER);
     }
 
-    // Gọi khi người cuối cùng rời nhóm
+    // Xóa nhóm cùng thành viên, tin nhắn và tệp đã gửi trong nhóm
     public static void deleteGroup(int groupId) {
+        List<String> storedFiles = FileAttachmentDAO.getStoredPathsOfGroup(groupId);
         String[] sqls = {
+                "DELETE FROM file_attachments WHERE group_id = ?",
                 "DELETE FROM group_messages WHERE group_id = ?",
                 "DELETE FROM group_members WHERE group_id = ?",
                 "DELETE FROM chat_groups WHERE id = ?"
@@ -117,6 +121,12 @@ public class GroupDAO {
             }
         } catch (SQLException e) {
             System.err.println("[GroupDAO] Lỗi xóa nhóm: " + e.getMessage());
+            return;
+        }
+
+        // Bản ghi đã xóa thì dọn luôn tệp trên đĩa
+        for (String path : storedFiles) {
+            new File(path).delete();
         }
     }
 
