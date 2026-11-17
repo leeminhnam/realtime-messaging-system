@@ -61,8 +61,8 @@ public class CreateGroupDialog extends JDialog {
                 JOptionPane.showMessageDialog(this, "Vui lòng nhập tên nhóm!", "Lỗi", JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            if (selected.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Vui lòng chọn ít nhất 1 thành viên!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            if (selected.size() < 2) {
+                JOptionPane.showMessageDialog(this, "Nhóm cần tối thiểu 3 người, vui lòng chọn ít nhất 2 thành viên!", "Lỗi", JOptionPane.ERROR_MESSAGE);
                 return;
             }
             listener.onCreate(name, selected);

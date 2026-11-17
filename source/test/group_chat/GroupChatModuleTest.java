@@ -30,7 +30,7 @@ public class GroupChatModuleTest {
 
     public static void run() {
         TestSupport.section("MODULE 3 - GROUP CHAT");
-        TestSupport.registerUsers("gc_lead", "gc_m1", "gc_m2", "gc_out");
+        TestSupport.registerUsers("gc_lead", "gc_m1", "gc_m2", "gc_m3", "gc_out");
 
         testGroupDao();
         testGroupMessageDao();
@@ -124,6 +124,12 @@ public class GroupChatModuleTest {
         check("handler CREATE: danh sách thành viên chỉ gồm chính mình/user không tồn tại -> FAILED",
                 isStatus(call("CREATE_GROUP", "{\"name\":\"X\",\"members\":[\"gc_lead\",\"khong_co\"]}", "gc_lead", online),
                         "CREATE_GROUP_RESPONSE", "FAILED"));
+        check("handler CREATE: chỉ 2 người (trưởng nhóm + 1 thành viên) -> FAILED",
+                isStatus(call("CREATE_GROUP", "{\"name\":\"X\",\"members\":[\"gc_m1\"]}", "gc_lead", online),
+                        "CREATE_GROUP_RESPONSE", "FAILED"));
+        check("handler CREATE: sau khi lọc trùng/chính mình chỉ còn 1 thành viên -> FAILED",
+                isStatus(call("CREATE_GROUP", "{\"name\":\"X\",\"members\":[\"gc_m1\",\"GC_M1\",\"gc_lead\"]}", "gc_lead", online),
+                        "CREATE_GROUP_RESPONSE", "FAILED"));
 
         Capture m1 = new Capture();
         Capture lead = new Capture();
@@ -131,9 +137,9 @@ public class GroupChatModuleTest {
         online.put("gc_lead", lead.writer);
 
         // Trùng (không phân biệt hoa/thường), chính mình và user lạ đều bị lọc
-        int gid = createViaHandler("Nhóm handler", "[\"gc_m1\",\"GC_M1\",\"gc_lead\",\"khong_co\"]", "gc_lead", online);
-        check("handler CREATE: thành công, lọc trùng/chính mình/user lạ -> còn 2 thành viên",
-                gid > 0 && GroupDAO.getMembers(gid).size() == 2);
+        int gid = createViaHandler("Nhóm handler", "[\"gc_m1\",\"GC_M1\",\"gc_m2\",\"gc_lead\",\"khong_co\"]", "gc_lead", online);
+        check("handler CREATE: thành công, lọc trùng/chính mình/user lạ -> nhóm 3 người",
+                gid > 0 && GroupDAO.getMembers(gid).size() == 3);
         check("handler CREATE: thành viên online nhận GROUP_UPDATED",
                 m1.find("GROUP_UPDATED") != null
                         && m1.find("GROUP_UPDATED").getAsJsonObject("data").get("groupId").getAsInt() == gid);
@@ -148,7 +154,7 @@ public class GroupChatModuleTest {
 
     static void testHandlerMembersManagement() {
         Map<String, PrintWriter> online = new HashMap<>();
-        int gid = createViaHandler("Nhóm quản lý", "[\"gc_m1\"]", "gc_lead", online);
+        int gid = createViaHandler("Nhóm quản lý", "[\"gc_m1\",\"gc_m3\"]", "gc_lead", online);
 
         check("handler MEMBERS: thành viên xem được danh sách",
                 isStatus(call("GET_GROUP_MEMBERS", "{\"groupId\":" + gid + "}", "gc_m1", online),

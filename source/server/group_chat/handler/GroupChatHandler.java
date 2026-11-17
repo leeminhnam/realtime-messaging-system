@@ -102,8 +102,9 @@ public class GroupChatHandler {
                 }
             }
         }
-        if (members.isEmpty()) {
-            sendResponse(writer, "CREATE_GROUP_RESPONSE", "FAILED", "Hãy chọn ít nhất 1 thành viên!", null);
+        // Nhóm mới cần tối thiểu 3 người: trưởng nhóm + ít nhất 2 thành viên
+        if (members.size() < 2) {
+            sendResponse(writer, "CREATE_GROUP_RESPONSE", "FAILED", "Nhóm cần tối thiểu 3 người, hãy chọn ít nhất 2 thành viên!", null);
             return;
         }
 
