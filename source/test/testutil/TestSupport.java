@@ -4,6 +4,7 @@ import account.UserDAO;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import database.DatabaseManager;
+import util.ConsoleUtf8;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -25,6 +26,7 @@ public class TestSupport {
 
     /** Tạo CSDL tạm (chỉ làm một lần) và tự dọn khi kết thúc tiến trình. */
     public static synchronized void initTempDb() throws Exception {
+        ConsoleUtf8.enable();
         if (dbReady) {
             return;
         }

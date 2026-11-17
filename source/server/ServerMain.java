@@ -6,6 +6,7 @@ import database.DatabaseManager;
 import file_notification.handler.FileNotificationHandler;
 import group_chat.handler.GroupChatHandler;
 import private_chat.handler.PrivateChatHandler;
+import util.ConsoleUtf8;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -26,6 +27,8 @@ public class ServerMain {
     public static final Map<String, PrintWriter> onlineClients = new ConcurrentHashMap<>();
 
     public static void main(String[] args) {
+        ConsoleUtf8.enable();
+
         System.out.println("==================================================");
         System.out.println("   CHATNEST - SERVER                              ");
         System.out.println("==================================================");
