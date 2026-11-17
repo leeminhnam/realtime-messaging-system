@@ -56,9 +56,8 @@ public class GroupChatPanel extends JPanel {
         headerPanel.add(infoPanel, BorderLayout.CENTER);
         headerPanel.add(btnMembers, BorderLayout.EAST);
 
-        // Danh sách tin nhắn (hiện tên người gửi) và ô nhập (nhóm chỉ gửi chữ)
+        // Danh sách tin nhắn hiện tên người gửi; ô nhập có đủ nút đính kèm và ghi âm như chat 1-1
         messageListPanel.setShowSenderName(true);
-        inputPanel.hideMediaButtons();
 
         JPanel activeChatPanel = new JPanel(new BorderLayout());
         activeChatPanel.add(headerPanel, BorderLayout.NORTH);
