@@ -18,6 +18,8 @@ public class GroupMembersDialog extends JDialog {
         void onTransferLeader(String username);
 
         void onLeaveGroup();
+
+        void onDeleteGroup();
     }
 
     private final String currentUsername;
@@ -29,6 +31,7 @@ public class GroupMembersDialog extends JDialog {
     private final JButton btnRemove = new JButton("Xóa khỏi nhóm");
     private final JButton btnTransfer = new JButton("Chuyển quyền trưởng nhóm");
     private final JButton btnLeave = new JButton("Rời nhóm");
+    private final JButton btnDelete = new JButton("Xóa nhóm");
 
     public GroupMembersDialog(Frame parent, String currentUsername, Actions actions) {
         super(parent, "Thành viên nhóm", false);
@@ -45,17 +48,24 @@ public class GroupMembersDialog extends JDialog {
         JScrollPane scroll = new JScrollPane(memberJList);
         scroll.setBorder(BorderFactory.createEmptyBorder(10, 10, 0, 10));
 
-        JPanel buttonPanel = new JPanel(new GridLayout(2, 2, 6, 6));
+        JPanel gridPanel = new JPanel(new GridLayout(2, 2, 6, 6));
+        gridPanel.add(btnAdd);
+        gridPanel.add(btnRemove);
+        gridPanel.add(btnTransfer);
+        gridPanel.add(btnLeave);
+
+        // Nút xóa nhóm nằm riêng một hàng, chữ đỏ để dễ phân biệt với các nút khác
+        btnDelete.setForeground(new Color(200, 35, 51));
+        JPanel buttonPanel = new JPanel(new BorderLayout(0, 6));
         buttonPanel.setBorder(BorderFactory.createEmptyBorder(0, 10, 10, 10));
-        buttonPanel.add(btnAdd);
-        buttonPanel.add(btnRemove);
-        buttonPanel.add(btnTransfer);
-        buttonPanel.add(btnLeave);
+        buttonPanel.add(gridPanel, BorderLayout.CENTER);
+        buttonPanel.add(btnDelete, BorderLayout.SOUTH);
 
         btnAdd.addActionListener(e -> actions.onAddMember());
         btnRemove.addActionListener(e -> actions.onRemoveMember(memberJList.getSelectedValue().getUsername()));
         btnTransfer.addActionListener(e -> actions.onTransferLeader(memberJList.getSelectedValue().getUsername()));
         btnLeave.addActionListener(e -> actions.onLeaveGroup());
+        btnDelete.addActionListener(e -> actions.onDeleteGroup());
 
         add(scroll, BorderLayout.CENTER);
         add(buttonPanel, BorderLayout.SOUTH);
@@ -89,7 +99,7 @@ public class GroupMembersDialog extends JDialog {
         return false;
     }
 
-    // Chỉ trưởng nhóm mới được thêm/xóa/chuyển quyền; ai cũng được rời nhóm
+    // Chỉ trưởng nhóm mới được thêm/xóa/chuyển quyền và xóa nhóm; ai cũng được rời nhóm
     private void updateButtons() {
         boolean leader = isCurrentUserLeader();
         MemberItem selected = memberJList.getSelectedValue();
@@ -99,6 +109,7 @@ public class GroupMembersDialog extends JDialog {
         btnRemove.setEnabled(canManage);
         btnTransfer.setEnabled(canManage);
         btnLeave.setEnabled(!members.isEmpty());
+        btnDelete.setVisible(leader);
     }
 
     // Hiển thị: chấm trạng thái, họ tên, username và vai trò

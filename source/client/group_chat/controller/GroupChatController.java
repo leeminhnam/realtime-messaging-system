@@ -67,6 +67,8 @@ public class GroupChatController {
                 || "REMOVE_GROUP_MEMBER_RESPONSE".equalsIgnoreCase(action)
                 || "TRANSFER_LEADER_RESPONSE".equalsIgnoreCase(action)
                 || "LEAVE_GROUP_RESPONSE".equalsIgnoreCase(action)
+                || "DELETE_GROUP_RESPONSE".equalsIgnoreCase(action)
+                || "GROUP_DELETED".equalsIgnoreCase(action)
                 || "SEND_GROUP_MESSAGE_RESPONSE".equalsIgnoreCase(action)
                 || "GET_GROUP_HISTORY_RESPONSE".equalsIgnoreCase(action)
                 || "RECEIVE_GROUP_MESSAGE".equalsIgnoreCase(action)
@@ -87,6 +89,9 @@ public class GroupChatController {
                     break;
                 case "GROUP_UPDATED":
                     loadGroups(); // nhóm thay đổi thì tải lại danh sách
+                    break;
+                case "GROUP_DELETED":
+                    onGroupDeleted(data);
                     break;
                 case "GET_GROUP_MEMBERS_RESPONSE":
                     if (success) onMembersReceived(data);
@@ -202,6 +207,11 @@ public class GroupChatController {
                 public void onLeaveGroup() {
                     leaveGroup();
                 }
+
+                @Override
+                public void onDeleteGroup() {
+                    deleteGroup();
+                }
             });
         }
         requestMembers(chatView.getCurrentGroupId());
@@ -267,6 +277,22 @@ public class GroupChatController {
         }
     }
 
+    // Trưởng nhóm xóa hẳn nhóm đang mở (có hỏi xác nhận, vì không thể hoàn tác)
+    private void deleteGroup() {
+        GroupItem group = chatView.getCurrentGroup();
+        if (group == null) {
+            return;
+        }
+        int ok = JOptionPane.showConfirmDialog(membersDialog,
+                "Xóa nhóm \"" + group.getName() + "\"?\nToàn bộ thành viên và tin nhắn của nhóm sẽ bị xóa, không thể hoàn tác.",
+                "Xác nhận xóa nhóm", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        if (ok == JOptionPane.YES_OPTION) {
+            JsonObject data = new JsonObject();
+            data.addProperty("groupId", group.getId());
+            sendRequest("DELETE_GROUP", data);
+        }
+    }
+
     // Gửi yêu cầu có kèm groupId và username (thêm / xóa / chuyển quyền)
     private void sendMemberRequest(String action, String username) {
         JsonObject data = new JsonObject();
@@ -324,6 +350,26 @@ public class GroupChatController {
                 requestMembers(updated.getId());
             }
         }
+    }
+
+    // Nhóm bị xóa: đang mở nhóm đó thì đóng lại và báo cho người dùng, sau đó tải lại danh sách nhóm
+    private void onGroupDeleted(JsonObject data) {
+        int groupId = data.get("groupId").getAsInt();
+        String groupName = data.get("groupName").getAsString();
+        String deletedBy = data.get("deletedBy").getAsString();
+
+        if (groupId == chatView.getCurrentGroupId()) {
+            // Đóng trước để onGroupsReceived không báo thêm "Bạn không còn ở trong nhóm"
+            chatView.showPlaceholder();
+            if (membersDialog != null) {
+                membersDialog.setVisible(false);
+            }
+        }
+        String text = deletedBy.equalsIgnoreCase(currentUsername)
+                ? "Đã xóa nhóm \"" + groupName + "\"."
+                : "Nhóm \"" + groupName + "\" đã bị trưởng nhóm @" + deletedBy + " xóa.";
+        JOptionPane.showMessageDialog(parent, text);
+        loadGroups();
     }
 
     // Nhận danh sách thành viên -> đổ vào hộp thoại

@@ -29,6 +29,7 @@ public class GroupChatHandler {
                 || "REMOVE_GROUP_MEMBER".equalsIgnoreCase(action)
                 || "TRANSFER_LEADER".equalsIgnoreCase(action)
                 || "LEAVE_GROUP".equalsIgnoreCase(action)
+                || "DELETE_GROUP".equalsIgnoreCase(action)
                 || "SEND_GROUP_MESSAGE".equalsIgnoreCase(action)
                 || "GET_GROUP_HISTORY".equalsIgnoreCase(action);
     }
@@ -67,6 +68,9 @@ public class GroupChatHandler {
                 break;
             case "LEAVE_GROUP":
                 handleLeaveGroup(data, writer, currentUsername, onlineClients);
+                break;
+            case "DELETE_GROUP":
+                handleDeleteGroup(data, writer, currentUsername, onlineClients);
                 break;
             case "SEND_GROUP_MESSAGE":
                 handleSendMessage(data, writer, currentUsername, onlineClients);
@@ -260,6 +264,30 @@ public class GroupChatHandler {
         notifyGroupUpdated(groupId, toNotify, onlineClients);
     }
 
+    // Chỉ trưởng nhóm được xóa nhóm: xóa luôn thành viên và tin nhắn, báo cho mọi thành viên
+    private static void handleDeleteGroup(JsonObject data, PrintWriter writer, String currentUsername,
+            Map<String, PrintWriter> onlineClients) {
+
+        int groupId = data.has("groupId") ? data.get("groupId").getAsInt() : 0;
+        if (!isLeader(groupId, currentUsername)) {
+            sendResponse(writer, "DELETE_GROUP_RESPONSE", "FAILED", "Chỉ trưởng nhóm mới được xóa nhóm!", null);
+            return;
+        }
+
+        ChatGroup group = GroupDAO.getGroupById(groupId);
+        String groupName = group != null ? group.getName() : "";
+        // Lấy danh sách trước khi xóa để mọi thành viên đều nhận được thông báo
+        List<String> toNotify = getMemberUsernames(groupId);
+        GroupDAO.deleteGroup(groupId);
+
+        JsonObject resData = new JsonObject();
+        resData.addProperty("groupId", groupId);
+        sendResponse(writer, "DELETE_GROUP_RESPONSE", "SUCCESS", "Đã xóa nhóm \"" + groupName + "\"!", resData);
+
+        System.out.println("[GROUP] @" + currentUsername + " xóa nhóm '" + groupName + "' (id=" + groupId + ")");
+        notifyGroupDeleted(groupId, groupName, currentUsername, toNotify, onlineClients);
+    }
+
     // Lưu tin trước, phản hồi người gửi rồi mới chuyển cho các thành viên đang online
     private static void handleSendMessage(JsonObject data, PrintWriter writer, String currentUsername,
             Map<String, PrintWriter> onlineClients) {
@@ -330,6 +358,27 @@ public class GroupChatHandler {
         packet.addProperty("status", "SUCCESS");
         JsonObject data = new JsonObject();
         data.addProperty("groupId", groupId);
+        packet.add("data", data);
+        String json = gson.toJson(packet);
+
+        for (String username : usernames) {
+            PrintWriter w = findWriter(onlineClients, username);
+            if (w != null) {
+                w.println(json);
+            }
+        }
+    }
+
+    // Báo GROUP_DELETED để Client đóng khung chat nhóm đó và tải lại danh sách nhóm
+    private static void notifyGroupDeleted(int groupId, String groupName, String deletedBy, List<String> usernames,
+            Map<String, PrintWriter> onlineClients) {
+        JsonObject packet = new JsonObject();
+        packet.addProperty("action", "GROUP_DELETED");
+        packet.addProperty("status", "SUCCESS");
+        JsonObject data = new JsonObject();
+        data.addProperty("groupId", groupId);
+        data.addProperty("groupName", groupName);
+        data.addProperty("deletedBy", deletedBy);
         packet.add("data", data);
         String json = gson.toJson(packet);
 

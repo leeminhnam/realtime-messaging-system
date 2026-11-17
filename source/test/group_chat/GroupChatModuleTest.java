@@ -37,6 +37,7 @@ public class GroupChatModuleTest {
         testHandlerCreateGroup();
         testHandlerMembersManagement();
         testHandlerLeaderTransferAndLeave();
+        testHandlerDeleteGroup();
         testHandlerMessaging();
         testIsGroupChatAction();
     }
@@ -230,6 +231,41 @@ public class GroupChatModuleTest {
                         && GroupDAO.getGroupById(gid) == null);
     }
 
+    static void testHandlerDeleteGroup() {
+        Map<String, PrintWriter> online = new HashMap<>();
+        int gid = createViaHandler("Nhóm sẽ xóa", "[\"gc_m1\",\"gc_m2\"]", "gc_lead", online);
+        GroupMessageDAO.saveMessage(gid, "gc_m1", "tin nhắn trước khi xóa");
+
+        check("handler DELETE: thành viên thường không được xóa nhóm",
+                isStatus(call("DELETE_GROUP", "{\"groupId\":" + gid + "}", "gc_m1", online), "DELETE_GROUP_RESPONSE", "FAILED")
+                        && GroupDAO.getGroupById(gid) != null);
+        check("handler DELETE: người ngoài nhóm không được xóa nhóm",
+                isStatus(call("DELETE_GROUP", "{\"groupId\":" + gid + "}", "gc_out", online), "DELETE_GROUP_RESPONSE", "FAILED")
+                        && GroupDAO.getGroupById(gid) != null);
+        check("handler DELETE: nhóm không tồn tại -> FAILED",
+                isStatus(call("DELETE_GROUP", "{\"groupId\":999999}", "gc_lead", online), "DELETE_GROUP_RESPONSE", "FAILED"));
+
+        Capture m1 = new Capture();
+        Capture out = new Capture();
+        online.put("gc_m1", m1.writer);
+        online.put("gc_out", out.writer);
+        check("handler DELETE: trưởng nhóm xóa nhóm -> SUCCESS, xóa nhóm, thành viên và tin nhắn",
+                isStatus(call("DELETE_GROUP", "{\"groupId\":" + gid + "}", "gc_lead", online), "DELETE_GROUP_RESPONSE", "SUCCESS")
+                        && GroupDAO.getGroupById(gid) == null
+                        && GroupDAO.getRole(gid, "gc_m1") == null
+                        && GroupMessageDAO.getHistory(gid, 50).isEmpty());
+
+        JsonObject deleted = m1.find("GROUP_DELETED");
+        check("handler DELETE: thành viên online nhận GROUP_DELETED kèm tên nhóm và người xóa",
+                deleted != null
+                        && deleted.getAsJsonObject("data").get("groupId").getAsInt() == gid
+                        && "Nhóm sẽ xóa".equals(deleted.getAsJsonObject("data").get("groupName").getAsString())
+                        && "gc_lead".equals(deleted.getAsJsonObject("data").get("deletedBy").getAsString()));
+        check("handler DELETE: người ngoài nhóm không nhận GROUP_DELETED", out.find("GROUP_DELETED") == null);
+        check("handler DELETE: xóa lại nhóm đã xóa -> FAILED",
+                isStatus(call("DELETE_GROUP", "{\"groupId\":" + gid + "}", "gc_lead", online), "DELETE_GROUP_RESPONSE", "FAILED"));
+    }
+
     static void testHandlerMessaging() {
         Map<String, PrintWriter> online = new HashMap<>();
         int gid = createViaHandler("Nhóm nhắn tin", "[\"gc_m1\",\"gc_m2\"]", "gc_lead", online);
@@ -271,12 +307,12 @@ public class GroupChatModuleTest {
 
     static void testIsGroupChatAction() {
         String[] actions = { "CREATE_GROUP", "GET_MY_GROUPS", "GET_GROUP_MEMBERS", "ADD_GROUP_MEMBER",
-                "REMOVE_GROUP_MEMBER", "TRANSFER_LEADER", "LEAVE_GROUP", "SEND_GROUP_MESSAGE", "GET_GROUP_HISTORY" };
+                "REMOVE_GROUP_MEMBER", "TRANSFER_LEADER", "LEAVE_GROUP", "DELETE_GROUP", "SEND_GROUP_MESSAGE", "GET_GROUP_HISTORY" };
         boolean all = true;
         for (String a : actions) {
             all &= GroupChatHandler.isGroupChatAction(a);
         }
-        check("isGroupChatAction: nhận đủ 9 action của module", all && GroupChatHandler.isGroupChatAction("leave_group"));
+        check("isGroupChatAction: nhận đủ 10 action của module", all && GroupChatHandler.isGroupChatAction("leave_group"));
         check("isGroupChatAction: từ chối action module khác", !GroupChatHandler.isGroupChatAction("SEND_FILE"));
     }
 }
