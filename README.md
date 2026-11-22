@@ -248,12 +248,21 @@ realtime-messaging-system/
 - Mã hóa đường truyền bằng TLS/SSL (`SSLServerSocket`) thay cho TCP thuần
 - Cấp token phiên (JWT) thay vì tin vào username của kết nối; giới hạn số lần đăng nhập sai
 - Chức năng quên/đổi mật khẩu, xác thực email, đăng nhập một tài khoản trên nhiều thiết bị
-- Phân quyền chi tiết hơn (quản trị viên, chặn/báo cáo người dùng)
+- Phân quyền chi tiết hơn (quản trị viên, báo cáo người dùng vi phạm)
 
-**Tính năng nhắn tin**
+**Kết bạn & quan hệ người dùng**
+- Tìm kiếm tài khoản theo tên, gửi/chấp nhận/từ chối/hủy lời mời kết bạn, quản lý danh sách bạn bè
+- Chặn và bỏ chặn người dùng: người bị chặn không thể nhắn tin hay thêm mình vào nhóm
+- Bổ sung các action mới như `FRIEND_REQUEST`, `FRIEND_ACCEPT`, `FRIEND_REJECT`, `UNFRIEND`, `BLOCK_USER`, `GET_FRIEND_LIST` và bảng `friendships` trong CSDL
+- Server đẩy thông báo realtime khi có lời mời kết bạn; chỉ cho phép chat 1-1 giữa bạn bè (hoặc tách riêng hộp "tin nhắn chờ" cho người lạ)
+- Chỉ broadcast `USER_STATUS_CHANGE` tới bạn bè thay vì mọi client online, giảm lưu lượng mạng
+- Gợi ý kết bạn dựa trên nhóm chung
+
+**Tính năng nhắn tin & nhóm**
 - Thu hồi/chỉnh sửa tin nhắn, trả lời (reply) và thả cảm xúc (reaction)
 - Hiển thị "đang nhập..." (typing indicator) và thời điểm hoạt động gần nhất
 - Tìm kiếm tin nhắn, ghim tin nhắn, lưu trữ hội thoại
+- Thêm vai trò phó nhóm, mời vào nhóm bằng liên kết, đổi tên và ảnh đại diện nhóm
 - Gọi thoại/video (WebRTC hoặc UDP streaming)
 - Thông báo ngoài ứng dụng (system tray), bật/tắt hoặc tùy chỉnh âm thanh thông báo
 
