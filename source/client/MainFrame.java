@@ -26,6 +26,7 @@ public class MainFrame extends JFrame {
 
     private JLabel lblUserInfo;
     private UserListPanel userListPanel;
+    private JTabbedPane sidebarTabs;
     private PrivateChatPanel privateChatPanel;
     private PrivateChatController privateChatController;
     private GroupListPanel groupListPanel;
@@ -109,7 +110,7 @@ public class MainFrame extends JFrame {
         groupListPanel = new GroupListPanel(username);
 
         // Sidebar có 2 tab: người dùng (chat riêng) và nhóm (chat nhóm)
-        JTabbedPane sidebarTabs = new JTabbedPane();
+        sidebarTabs = new JTabbedPane();
         sidebarTabs.addTab("Người dùng", userListPanel);
         sidebarTabs.addTab("Nhóm", groupListPanel);
         sidebarTabs.setPreferredSize(new Dimension(280, 0));
@@ -118,6 +119,15 @@ public class MainFrame extends JFrame {
         // Vùng giữa: đổi qua lại giữa khung chat riêng và chat nhóm
         privateChatPanel = new PrivateChatPanel();
         privateChatController = new PrivateChatController(privateChatPanel, writer, username);
+        privateChatController.setUnreadListener(userListPanel::addUnread);
+        privateChatController.setChatReadListener(userListPanel::clearUnread);
+        privateChatController.setWindowActiveSupplier(this::isActive);
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowActivated(java.awt.event.WindowEvent e) {
+                privateChatController.onWindowActivated();
+            }
+        });
 
         groupChatPanel = new GroupChatPanel();
         groupChatController = new GroupChatController(this, groupListPanel, groupChatPanel, userListPanel, writer, username);
@@ -130,7 +140,9 @@ public class MainFrame extends JFrame {
 
         // Đổi tab thì đổi khung chat tương ứng
         sidebarTabs.addChangeListener(e -> {
-            centerLayout.show(centerPanel, sidebarTabs.getSelectedIndex() == 0 ? "PRIVATE" : "GROUP");
+            boolean privateSelected = sidebarTabs.getSelectedIndex() == 0;
+            centerLayout.show(centerPanel, privateSelected ? "PRIVATE" : "GROUP");
+            privateChatController.setChatVisible(privateSelected);
         });
         groupChatController.setShowGroupTab(() -> sidebarTabs.setSelectedIndex(1));
 
@@ -223,6 +235,7 @@ public class MainFrame extends JFrame {
                             SwingUtilities.invokeLater(() -> {
                                 NotificationToast.showNotification(this, notifType, senderUser, senderFullName, notifMessage, targetSender -> {
                                     // Bấm vào thông báo thì mở luôn hội thoại đó
+                                    sidebarTabs.setSelectedIndex(0);
                                     userListPanel.selectUser(targetSender);
                                 });
                             });

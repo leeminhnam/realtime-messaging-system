@@ -101,3 +101,8 @@ logs/
 hs_err_pid*
 replay_pid*
 *.hprof
+
+# ==========================================
+# 7. Postman Collections
+# ==========================================
+*.postman_collection.json

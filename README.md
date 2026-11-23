@@ -290,3 +290,5 @@ realtime-messaging-system/
 ## 📚 TÀI LIỆU THAM KHẢO
 
 > (Nếu có) Liệt kê các tài liệu, API docs, hoặc nguồn tham khảo đã sử dụng.
+
+- **API docs:** [Postman Collection](https://www.postman.com/duc-s-team/workspace/my-workspace/collection/47918178-ac1b74a9-c408-4de4-907a-fd5cb8e45299?action=share&source=copy-link&creator=47918178)

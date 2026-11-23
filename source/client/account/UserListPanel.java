@@ -14,11 +14,18 @@ public class UserListPanel extends JPanel {
     private final DefaultListModel<UserItem> listModel;
     private final JList<UserItem> userJList;
     private final Map<String, UserItem> userMap = new HashMap<>();
+    // Số tin chưa xem trong phiên hiện tại, theo username người gửi
+    private final Map<String, Integer> unreadMap = new HashMap<>();
 
     public UserListPanel(String currentUsername) {
         this.currentUsername = currentUsername;
         this.listModel = new DefaultListModel<>();
-        this.userJList = new JList<>(listModel);
+        this.userJList = new JList<UserItem>(listModel) {
+            @Override
+            public boolean getScrollableTracksViewportWidth() {
+                return true;
+            }
+        };
 
         setLayout(new BorderLayout());
         setBorder(BorderFactory.createTitledBorder("Danh sách người dùng"));
@@ -87,6 +94,16 @@ public class UserListPanel extends JPanel {
         updateUserStatus(username, status, null);
     }
 
+    public void addUnread(String username) {
+        unreadMap.merge(username.toLowerCase(), 1, Integer::sum);
+        userJList.repaint();
+    }
+
+    public void clearUnread(String username) {
+        unreadMap.remove(username.toLowerCase());
+        userJList.repaint();
+    }
+
     // Chọn người dùng theo username, dùng khi bấm vào thông báo
     public void selectUser(String username) {
         if (username == null) return;
@@ -131,9 +148,10 @@ public class UserListPanel extends JPanel {
     }
 
     // Vẽ chấm xanh cho người online, xám cho người offline
-    private static class UserCellRenderer extends JPanel implements ListCellRenderer<UserItem> {
+    private class UserCellRenderer extends JPanel implements ListCellRenderer<UserItem> {
         private final JLabel lblName = new JLabel();
         private final JLabel lblStatusDot = new JLabel("● ");
+        private final JLabel lblUnread = new JLabel();
 
         public UserCellRenderer() {
             setLayout(new BorderLayout(5, 0));
@@ -142,14 +160,22 @@ public class UserListPanel extends JPanel {
             // Chấm to hơn một chút cho dễ nhìn
             lblStatusDot.setFont(new Font("Segoe UI", Font.BOLD, 18));
 
+            lblUnread.setFont(new Font("Segoe UI", Font.BOLD, 12));
+            lblUnread.setForeground(new Color(0, 102, 204));
+            // Giữ chỗ riêng cho bộ đếm, không để tên dài đẩy nhãn ra ngoài sidebar
             add(lblStatusDot, BorderLayout.WEST);
             add(lblName, BorderLayout.CENTER);
+            add(lblUnread, BorderLayout.EAST);
         }
 
         @Override
         public Component getListCellRendererComponent(JList<? extends UserItem> list, UserItem value, int index,
                 boolean isSelected, boolean cellHasFocus) {
+            int unread = unreadMap.getOrDefault(value.getUsername().toLowerCase(), 0);
+            lblUnread.setText(unread > 0 ? "(" + unread + " mới)" : "");
+            lblUnread.setVisible(unread > 0);
             lblName.setText(value.getFullName() + " (@" + value.getUsername() + ")");
+            setToolTipText(lblName.getText());
             lblName.setFont(new Font("Segoe UI", Font.PLAIN, 13));
 
             if ("ONLINE".equalsIgnoreCase(value.getStatus())) {

@@ -5,5 +5,15 @@
     ],
     "java.project.referencedLibraries": [
         "source/lib/*.jar"
-    ]
+    ],
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "driver": "SQLite",
+            "name": "a",
+            "group": "a",
+            "database": "${workspaceFolder:realtime-messaging-system}/source/server/data/messaging_app.db"
+        }
+    ],
+    "sqltools.useNodeRuntime": true
 }
