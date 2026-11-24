@@ -36,6 +36,36 @@ public class GroupMessageDAO {
         return null;
     }
 
+    // Chỉ lưu khi người gửi còn là thành viên nhóm. Điều kiện nằm ngay trong câu INSERT
+    // nên kiểm tra và ghi là một thao tác nguyên tử. Trả về null nếu không còn trong nhóm hoặc lỗi
+    public static GroupMessage saveMessageIfMember(int groupId, String senderUsername, String content) {
+        String sql = "INSERT INTO group_messages(group_id, sender_username, content, sent_at) "
+                + "SELECT ?, ?, ?, datetime('now', 'localtime') "
+                + "WHERE EXISTS (SELECT 1 FROM group_members WHERE group_id = ? AND username = ?)";
+
+        try (Connection conn = DatabaseManager.getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+            pstmt.setInt(1, groupId);
+            pstmt.setString(2, senderUsername);
+            pstmt.setString(3, content);
+            pstmt.setInt(4, groupId);
+            pstmt.setString(5, senderUsername);
+            if (pstmt.executeUpdate() == 0) {
+                return null;
+            }
+
+            try (ResultSet rs = pstmt.getGeneratedKeys()) {
+                if (rs.next()) {
+                    return getMessageById(rs.getInt(1));
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("[GroupMessageDAO] Lỗi lưu tin nhắn nhóm: " + e.getMessage());
+        }
+        return null;
+    }
+
     public static GroupMessage getMessageById(int id) {
         try (Connection conn = DatabaseManager.getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(SELECT_MESSAGE + "WHERE m.id = ?")) {

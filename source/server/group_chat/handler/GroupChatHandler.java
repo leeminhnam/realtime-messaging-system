@@ -20,6 +20,11 @@ import java.util.Map;
 public class GroupChatHandler {
     private static final Gson gson = new Gson();
 
+    // Giới hạn đầu vào để Client không làm Server quá tải
+    public static final int MAX_MESSAGE_LENGTH = 2000;
+    public static final int DEFAULT_HISTORY_LIMIT = 50;
+    public static final int MAX_HISTORY_LIMIT = 100;
+
     // Các action của chat nhóm
     public static boolean isGroupChatAction(String action) {
         return "CREATE_GROUP".equalsIgnoreCase(action)
@@ -225,7 +230,10 @@ public class GroupChatHandler {
             return;
         }
 
-        GroupDAO.transferLeader(groupId, currentUsername, target);
+        if (!GroupDAO.transferLeader(groupId, currentUsername, target)) {
+            sendResponse(writer, "TRANSFER_LEADER_RESPONSE", "FAILED", "Không thể chuyển quyền trưởng nhóm, vui lòng thử lại!", null);
+            return;
+        }
 
         sendResponse(writer, "TRANSFER_LEADER_RESPONSE", "SUCCESS", "Đã chuyển quyền trưởng nhóm cho @" + target + "!", null);
         notifyGroupUpdated(groupId, getMemberUsernames(groupId), onlineClients);
@@ -249,7 +257,10 @@ public class GroupChatHandler {
                 sendResponse(writer, "LEAVE_GROUP_RESPONSE", "FAILED", "Trưởng nhóm cần chuyển quyền cho người khác trước khi rời nhóm!", null);
                 return;
             }
-            GroupDAO.deleteGroup(groupId);
+            if (!GroupDAO.deleteGroup(groupId)) {
+                sendResponse(writer, "LEAVE_GROUP_RESPONSE", "FAILED", "Không thể rời nhóm, vui lòng thử lại!", null);
+                return;
+            }
         } else {
             GroupDAO.removeMember(groupId, currentUsername);
         }
@@ -271,7 +282,10 @@ public class GroupChatHandler {
         ChatGroup group = GroupDAO.getGroupById(groupId);
         String groupName = group != null ? group.getName() : "";
         List<String> toNotify = getMemberUsernames(groupId);
-        GroupDAO.deleteGroup(groupId);
+        if (!GroupDAO.deleteGroup(groupId)) {
+            sendResponse(writer, "DELETE_GROUP_RESPONSE", "FAILED", "Không thể xóa nhóm, vui lòng thử lại!", null);
+            return;
+        }
 
         JsonObject resData = new JsonObject();
         resData.addProperty("groupId", groupId);
@@ -296,10 +310,19 @@ public class GroupChatHandler {
             sendResponse(writer, "SEND_GROUP_MESSAGE_RESPONSE", "FAILED", "Nội dung tin nhắn không được để trống!", null);
             return;
         }
+        if (content.length() > MAX_MESSAGE_LENGTH) {
+            sendResponse(writer, "SEND_GROUP_MESSAGE_RESPONSE", "FAILED",
+                    "Tin nhắn tối đa " + MAX_MESSAGE_LENGTH + " ký tự!", null);
+            return;
+        }
 
-        GroupMessage saved = GroupMessageDAO.saveMessage(groupId, currentUsername, content);
+        // Lưu có điều kiện "người gửi vẫn còn trong nhóm" ngay trong câu INSERT,
+        // tránh trường hợp bị xóa khỏi nhóm đúng lúc giữa bước kiểm tra và bước lưu
+        GroupMessage saved = GroupMessageDAO.saveMessageIfMember(groupId, currentUsername, content);
         if (saved == null) {
-            sendResponse(writer, "SEND_GROUP_MESSAGE_RESPONSE", "FAILED", "Lỗi lưu tin nhắn vào CSDL!", null);
+            String reason = GroupDAO.getRole(groupId, currentUsername) == null
+                    ? "Bạn không thuộc nhóm này!" : "Lỗi lưu tin nhắn vào CSDL!";
+            sendResponse(writer, "SEND_GROUP_MESSAGE_RESPONSE", "FAILED", reason, null);
             return;
         }
 
@@ -330,7 +353,13 @@ public class GroupChatHandler {
     // Lịch sử nhóm
     private static void handleGetHistory(JsonObject data, PrintWriter writer, String currentUsername) {
         int groupId = data.has("groupId") ? data.get("groupId").getAsInt() : 0;
-        int limit = data.has("limit") ? data.get("limit").getAsInt() : 50;
+        int limit = data.has("limit") ? data.get("limit").getAsInt() : DEFAULT_HISTORY_LIMIT;
+        // SQLite hiểu LIMIT âm là không giới hạn, nên ép về khoảng 1..MAX_HISTORY_LIMIT
+        if (limit <= 0) {
+            limit = DEFAULT_HISTORY_LIMIT;
+        } else if (limit > MAX_HISTORY_LIMIT) {
+            limit = MAX_HISTORY_LIMIT;
+        }
 
         if (GroupDAO.getRole(groupId, currentUsername) == null) {
             sendResponse(writer, "GET_GROUP_HISTORY_RESPONSE", "FAILED", "Bạn không thuộc nhóm này!", null);

@@ -165,6 +165,11 @@ public class GroupChatController {
         if (groupId == 0 || content.trim().isEmpty()) {
             return;
         }
+        // Khớp giới hạn MAX_MESSAGE_LENGTH bên Server, báo lỗi sớm không cần gửi lên
+        if (content.trim().length() > 2000) {
+            showError("Tin nhắn tối đa 2000 ký tự!");
+            return;
+        }
         JsonObject data = new JsonObject();
         data.addProperty("groupId", groupId);
         data.addProperty("content", content);

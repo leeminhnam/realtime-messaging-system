@@ -20,24 +20,35 @@ public class GroupDAO {
             + "(SELECT COUNT(*) FROM group_members WHERE group_id = g.id) AS member_count "
             + "FROM chat_groups g ";
 
+    // Tạo nhóm và thêm thành viên trong cùng một transaction: lỗi giữa chừng thì rollback hết,
+    // không để lại nhóm thiếu thành viên hoặc không có trưởng nhóm
     public static int createGroup(String name, String leader, List<String> members) {
         String sql = "INSERT INTO chat_groups(name, created_at) VALUES(?, datetime('now', 'localtime'))";
 
-        try (Connection conn = DatabaseManager.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-
-            pstmt.setString(1, name);
-            pstmt.executeUpdate();
-
-            try (ResultSet rs = pstmt.getGeneratedKeys()) {
-                if (rs.next()) {
-                    int groupId = rs.getInt(1);
-                    addMember(groupId, leader, LEADER);
-                    for (String member : members) {
-                        addMember(groupId, member, MEMBER);
+        try (Connection conn = DatabaseManager.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                int groupId;
+                try (PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+                    pstmt.setString(1, name);
+                    pstmt.executeUpdate();
+                    try (ResultSet rs = pstmt.getGeneratedKeys()) {
+                        if (!rs.next()) {
+                            throw new SQLException("Không lấy được id nhóm vừa tạo");
+                        }
+                        groupId = rs.getInt(1);
                     }
-                    return groupId;
                 }
+
+                insertMember(conn, groupId, leader, LEADER);
+                for (String member : members) {
+                    insertMember(conn, groupId, member, MEMBER);
+                }
+                conn.commit();
+                return groupId;
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
             }
         } catch (SQLException e) {
             System.err.println("[GroupDAO] Lỗi tạo nhóm: " + e.getMessage());
@@ -46,19 +57,25 @@ public class GroupDAO {
     }
 
     public static boolean addMember(int groupId, String username, String role) {
-        String sql = "INSERT INTO group_members(group_id, username, role, joined_at) "
-                + "VALUES(?, ?, ?, datetime('now', 'localtime'))";
-
-        try (Connection conn = DatabaseManager.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setInt(1, groupId);
-            pstmt.setString(2, username);
-            pstmt.setString(3, role);
-            return pstmt.executeUpdate() > 0;
+        try (Connection conn = DatabaseManager.getConnection()) {
+            insertMember(conn, groupId, username, role);
+            return true;
         } catch (SQLException e) {
             System.err.println("[GroupDAO] Lỗi thêm thành viên: " + e.getMessage());
             return false;
+        }
+    }
+
+    // Thêm thành viên trên connection có sẵn để dùng chung trong transaction
+    private static void insertMember(Connection conn, int groupId, String username, String role) throws SQLException {
+        String sql = "INSERT INTO group_members(group_id, username, role, joined_at) "
+                + "VALUES(?, ?, ?, datetime('now', 'localtime'))";
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, groupId);
+            pstmt.setString(2, username);
+            pstmt.setString(3, role);
+            pstmt.executeUpdate();
         }
     }
 
@@ -94,12 +111,41 @@ public class GroupDAO {
         }
     }
 
+    // Hạ trưởng nhóm cũ và nâng người mới trong cùng một transaction.
+    // Chỉ commit khi cả hai bước đều đổi đúng 1 dòng, nếu không thì rollback để nhóm luôn có đúng 1 trưởng nhóm
     public static boolean transferLeader(int groupId, String oldLeader, String newLeader) {
-        return setRole(groupId, oldLeader, MEMBER) && setRole(groupId, newLeader, LEADER);
+        String demote = "UPDATE group_members SET role = 'MEMBER' WHERE group_id = ? AND username = ? AND role = 'LEADER'";
+        String promote = "UPDATE group_members SET role = 'LEADER' WHERE group_id = ? AND username = ? AND role = 'MEMBER'";
+
+        try (Connection conn = DatabaseManager.getConnection()) {
+            conn.setAutoCommit(false);
+            try (PreparedStatement down = conn.prepareStatement(demote);
+                    PreparedStatement up = conn.prepareStatement(promote)) {
+
+                down.setInt(1, groupId);
+                down.setString(2, oldLeader);
+                up.setInt(1, groupId);
+                up.setString(2, newLeader);
+
+                if (down.executeUpdate() == 1 && up.executeUpdate() == 1) {
+                    conn.commit();
+                    return true;
+                }
+                conn.rollback();
+                return false;
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            }
+        } catch (SQLException e) {
+            System.err.println("[GroupDAO] Lỗi chuyển quyền trưởng nhóm: " + e.getMessage());
+            return false;
+        }
     }
 
-    // Xóa nhóm 
-    public static void deleteGroup(int groupId) {
+    // Xóa nhóm: 4 câu DELETE chạy trong một transaction, lỗi giữa chừng thì rollback
+    // để không còn dữ liệu dở dang. Tệp trên đĩa chỉ xóa sau khi commit thành công
+    public static boolean deleteGroup(int groupId) {
         List<String> storedFiles = FileAttachmentDAO.getStoredPathsOfGroup(groupId);
         String[] sqls = {
                 "DELETE FROM file_attachments WHERE group_id = ?",
@@ -109,20 +155,28 @@ public class GroupDAO {
         };
 
         try (Connection conn = DatabaseManager.getConnection()) {
-            for (String sql : sqls) {
-                try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-                    pstmt.setInt(1, groupId);
-                    pstmt.executeUpdate();
+            conn.setAutoCommit(false);
+            try {
+                for (String sql : sqls) {
+                    try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                        pstmt.setInt(1, groupId);
+                        pstmt.executeUpdate();
+                    }
                 }
+                conn.commit();
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
             }
         } catch (SQLException e) {
             System.err.println("[GroupDAO] Lỗi xóa nhóm: " + e.getMessage());
-            return;
+            return false;
         }
 
         for (String path : storedFiles) {
             new File(path).delete();
         }
+        return true;
     }
 
     public static String getRole(int groupId, String username) {
