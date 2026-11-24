@@ -17,6 +17,14 @@ public class NotificationToast extends JWindow {
 
     private static NotificationToast activeToast = null;
 
+    /** Đóng thông báo còn hiển thị khi người dùng đăng xuất. */
+    public static synchronized void dismissActive() {
+        if (activeToast != null) {
+            activeToast.dispose();
+            activeToast = null;
+        }
+    }
+
     // Thông báo chat riêng: dòng tiêu đề là "Họ tên (@username)"
     public static void showNotification(JFrame parent, String type, String senderUsername,
                                         String senderFullName, String message,

@@ -3,6 +3,7 @@ import account.view.UserListPanel;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import file_notification.audio.AudioPlayer;
 import file_notification.controller.FileClientManager;
 import file_notification.notification.NotificationToast;
 import group_chat.controller.GroupChatController;
@@ -23,6 +24,7 @@ public class MainFrame extends JFrame {
     private final BufferedReader reader;
     private final PrintWriter writer;
     private final JsonObject currentUser;
+    private volatile boolean loggingOut = false;
 
     private JLabel lblUserInfo;
     private UserListPanel userListPanel;
@@ -84,14 +86,7 @@ public class MainFrame extends JFrame {
             }).setVisible(true);
         });
 
-        btnLogout.addActionListener(e -> {
-            try {
-                socket.close();
-            } catch (Exception ignored) {
-            }
-            dispose();
-            System.exit(0);
-        });
+        btnLogout.addActionListener(e -> logoutToLoginFrame());
 
         rightHeaderPanel.add(btnProfile);
         rightHeaderPanel.add(btnLogout);
@@ -153,6 +148,26 @@ public class MainFrame extends JFrame {
         });
 
         setContentPane(mainPanel);
+    }
+
+    /** Đăng xuất chỉ kết thúc phiên TCP hiện tại; ứng dụng vẫn mở để đăng nhập tài khoản khác. */
+    private void logoutToLoginFrame() {
+        if (loggingOut) return;
+        loggingOut = true;
+
+        // Xóa dữ liệu tệp đang cache/chờ tải để không dùng nhầm giữa hai tài khoản.
+        FileClientManager.getInstance().resetSession();
+        // Đóng popup và dừng âm thanh của phiên cũ trước khi mở màn hình đăng nhập.
+        NotificationToast.dismissActive();
+        AudioPlayer.getInstance().stop();
+
+        try {
+            // ServerMain.ClientHandler.finally sẽ cập nhật người dùng về OFFLINE.
+            socket.close();
+        } catch (Exception ignored) {
+        }
+        dispose();
+        ClientMain.showLoginFrame();
     }
 
     private void updateUserInfoDisplay() {
@@ -268,7 +283,10 @@ public class MainFrame extends JFrame {
                     }
                 }
             } catch (Exception e) {
-                System.out.println("[CLIENT] Đã ngắt kết nối với Server.");
+                // Đóng Socket khi đăng xuất là chủ động, không phải lỗi mất kết nối.
+                if (!loggingOut) {
+                    System.out.println("[CLIENT] Đã ngắt kết nối với Server.");
+                }
             }
         }).start();
     }

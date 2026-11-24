@@ -11,10 +11,17 @@ public class ClientMain {
             System.err.println("Không thể thiết lập FlatLaf: " + e.getMessage());
         }
 
-        SwingUtilities.invokeLater(() -> {
-            new LoginFrame((socket, reader, writer, userData) -> {
-                new MainFrame(socket, reader, writer, userData).setVisible(true);
-            }).setVisible(true);
-        });
+        SwingUtilities.invokeLater(ClientMain::showLoginFrame);
+    }
+
+    /** Mở màn hình đăng nhập, dùng lại cả khi người dùng đăng xuất khỏi MainFrame. */
+    public static void showLoginFrame() {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            SwingUtilities.invokeLater(ClientMain::showLoginFrame);
+            return;
+        }
+        new LoginFrame((socket, reader, writer, userData) -> {
+            new MainFrame(socket, reader, writer, userData).setVisible(true);
+        }).setVisible(true);
     }
 }

@@ -42,6 +42,13 @@ public class FileClientManager {
         return this.writer;
     }
 
+    /** Dọn dữ liệu của phiên đăng nhập cũ (tránh để tài khoản mới dùng nhầm cache/file). */
+    public void resetSession() {
+        writer = null;
+        fileCache.clear();
+        downloadListeners.clear();
+    }
+
     // Gửi một tệp trên máy lên Server
     public boolean sendFile(PrintWriter writer, String receiver, File file, String fileType, int duration, String caption) {
         byte[] fileBytes = readForUpload(file);
