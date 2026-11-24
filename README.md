@@ -63,18 +63,33 @@ git clone https://github.com/leeminhnam/realtime-messaging-system.git
 cd realtime-messaging-system
 ```
 
-### 2. Khởi động Server
+### 2. Biên dịch
+Yêu cầu JDK 17 trở lên. Tại thư mục gốc dự án, biên dịch cả Server và Client vào `out/production/realtime-messaging-system` (chạy lại mỗi khi sửa code):
+
+PowerShell:
+```powershell
+javac -encoding UTF-8 -cp "source/lib/*" -d out/production/realtime-messaging-system (Get-ChildItem -Recurse source/server, source/client -Filter *.java).FullName
+```
+
+Git Bash:
+```bash
+javac -encoding UTF-8 -cp "source/lib/*" -d out/production/realtime-messaging-system $(find source/server source/client -name '*.java')
+```
+
+> Nếu mở dự án bằng IntelliJ IDEA thì có thể dùng **Build > Build Project**, IDE cũng xuất class ra đúng thư mục này.
+
+### 3. Khởi động Server
 Tại thư mục gốc dự án:
 ```bash
 java -cp "out/production/realtime-messaging-system;source/lib/*" ServerMain
 ```
 
-### 3. Khởi động Client (mở nhiều terminal để chạy nhiều Client cùng lúc)
+### 4. Khởi động Client (mở nhiều terminal để chạy nhiều Client cùng lúc)
 ```bash
 java -cp "out/production/realtime-messaging-system;source/lib/*" ClientMain
 ```
 
-### 4. Kiểm thử nhanh
+### 5. Kiểm thử nhanh
 Bộ test (`source/test/`) bao phủ **cả 4 module** với tổng cộng **175 ca kiểm thử**, không cần thư viện test ngoài. Test dùng CSDL SQLite và thư mục upload tạm (thông qua `-Dchatnest.db.dir`, tự xóa khi kết thúc) nên **không ảnh hưởng** tới `messaging_app.db` thật. Handler được test trực tiếp bằng gói JSON, không cần mở socket hay giao diện.
 
 ```bash
