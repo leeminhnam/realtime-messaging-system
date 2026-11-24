@@ -208,7 +208,7 @@ Socket -> ClientHandler.readLine() -> parse JSON -> theo action:
 Bộ test nằm ở `source/test/`, test trực tiếp DAO và handler bằng gói JSON trên CSDL tạm (không cần mở socket). Tại thư mục gốc dự án, dùng Git Bash:
 
 ```bash
-javac -encoding UTF-8 -cp "source/lib/*" -d out_test $(find source/server source/test -name '*.java') && java -Dfile.encoding=UTF-8 -cp "out_test;source/lib/*" AllTests
+javac -encoding UTF-8 -cp "source/lib/*" -d out_test $(find source/server source/client source/test -name '*.java') && java -Dfile.encoding=UTF-8 -cp "out_test;source/lib/*" AllTests
 ```
 
 Kết quả mong đợi: `Kết quả: 175 đạt, 0 lỗi`.

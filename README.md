@@ -79,7 +79,7 @@ Bộ test (`source/test/`) bao phủ **cả 4 module** với tổng cộng **175
 
 ```bash
 # Biên dịch và chạy toàn bộ test của 4 module (tại thư mục gốc dự án, dùng Git Bash)
-javac -encoding UTF-8 -cp "source/lib/*" -d out_test $(find source/server source/test -name '*.java') && java -Dfile.encoding=UTF-8 -cp "out_test;source/lib/*" AllTests
+javac -encoding UTF-8 -cp "source/lib/*" -d out_test $(find source/server source/client source/test -name '*.java') && java -Dfile.encoding=UTF-8 -cp "out_test;source/lib/*" AllTests
 ```
 > Trên Linux/macOS đổi `;` trong classpath thành `:`.
 
