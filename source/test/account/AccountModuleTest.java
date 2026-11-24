@@ -43,7 +43,7 @@ public class AccountModuleTest {
         testStatusChangeJson();
     }
 
-    // ---------- UserDAO ----------
+    // UserDAO 
     static void testRegisterSuccess() {
         check("register: tài khoản mới thành công", UserDAO.register("alice", "pw123", "Alice Nguyen"));
     }
@@ -98,7 +98,7 @@ public class AccountModuleTest {
         check("getUserByUsername: không tồn tại -> null", UserDAO.getUserByUsername("ghost") == null);
     }
 
-    // ---------- AccountHandler (giao thức JSON) ----------
+    // AccountHandler (giao thức JSON) 
     static void testHandlerRegisterEmptyField() {
         JsonObject res = send("{\"action\":\"REGISTER\",\"data\":{\"username\":\"\",\"password\":\"p\",\"fullName\":\"N\"}}", null);
         check("handler REGISTER: trường rỗng -> FAILED",
@@ -167,7 +167,7 @@ public class AccountModuleTest {
         check("USER_STATUS_CHANGE: bản OFFLINE không kèm fullName/avatar", !min.has("fullName") && !min.has("avatar"));
     }
 
-    // ---------- tiện ích ----------
+    // Tiện ích 
     static JsonObject send(String json, String currentUser) {
         StringWriter sw = new StringWriter();
         AccountHandler.handleAccountAction(json, new PrintWriter(sw, true), currentUser);

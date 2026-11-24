@@ -15,7 +15,6 @@ public class MemberItem {
         this.status = status;
     }
 
-    // Đổi JSON do Server trả về thành đối tượng MemberItem
     public static MemberItem fromJson(JsonObject json) {
         return new MemberItem(
                 json.get("username").getAsString(),

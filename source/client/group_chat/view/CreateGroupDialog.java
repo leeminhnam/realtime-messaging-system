@@ -23,13 +23,11 @@ public class CreateGroupDialog extends JDialog {
         setLocationRelativeTo(parent);
         setLayout(new BorderLayout(8, 8));
 
-        // Ô nhập tên nhóm
         JPanel namePanel = new JPanel(new BorderLayout(0, 4));
         namePanel.setBorder(BorderFactory.createEmptyBorder(10, 12, 0, 12));
         namePanel.add(new JLabel("Tên nhóm:"), BorderLayout.NORTH);
         namePanel.add(txtName, BorderLayout.CENTER);
 
-        // Danh sách người dùng để tick chọn thành viên
         JPanel checkPanel = new JPanel();
         checkPanel.setLayout(new BoxLayout(checkPanel, BoxLayout.Y_AXIS));
         for (UserListPanel.UserItem user : users) {
@@ -45,7 +43,6 @@ public class CreateGroupDialog extends JDialog {
         centerPanel.setBorder(BorderFactory.createEmptyBorder(0, 12, 0, 12));
         centerPanel.add(scroll, BorderLayout.CENTER);
 
-        // Nút Tạo / Hủy
         JButton btnCreate = new JButton("Tạo nhóm");
         JButton btnCancel = new JButton("Hủy");
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
@@ -74,7 +71,6 @@ public class CreateGroupDialog extends JDialog {
         add(buttonPanel, BorderLayout.SOUTH);
     }
 
-    // Lấy username của những người đã được tick chọn
     private List<String> getSelectedUsernames() {
         List<String> result = new ArrayList<>();
         for (JCheckBox cb : checkBoxes) {

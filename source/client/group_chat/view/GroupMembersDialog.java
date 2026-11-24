@@ -8,8 +8,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class GroupMembersDialog extends JDialog {
-
-    // Các hành động mà dialog báo lại cho Controller xử lý
     public interface Actions {
         void onAddMember();
 
@@ -54,7 +52,6 @@ public class GroupMembersDialog extends JDialog {
         gridPanel.add(btnTransfer);
         gridPanel.add(btnLeave);
 
-        // Nút xóa nhóm nằm riêng một hàng, chữ đỏ để dễ phân biệt với các nút khác
         btnDelete.setForeground(new Color(200, 35, 51));
         JPanel buttonPanel = new JPanel(new BorderLayout(0, 6));
         buttonPanel.setBorder(BorderFactory.createEmptyBorder(0, 10, 10, 10));
@@ -89,7 +86,6 @@ public class GroupMembersDialog extends JDialog {
         return members;
     }
 
-    // Kiểm tra mình có phải trưởng nhóm không
     private boolean isCurrentUserLeader() {
         for (MemberItem m : members) {
             if (m.isLeader() && m.getUsername().equalsIgnoreCase(currentUsername)) {
@@ -99,7 +95,6 @@ public class GroupMembersDialog extends JDialog {
         return false;
     }
 
-    // Chỉ trưởng nhóm mới được thêm/xóa/chuyển quyền và xóa nhóm; ai cũng được rời nhóm
     private void updateButtons() {
         boolean leader = isCurrentUserLeader();
         MemberItem selected = memberJList.getSelectedValue();
@@ -112,7 +107,7 @@ public class GroupMembersDialog extends JDialog {
         btnDelete.setVisible(leader);
     }
 
-    // Hiển thị: chấm trạng thái, họ tên, username và vai trò
+    // Hiển thị
     private static class MemberCellRenderer extends JPanel implements ListCellRenderer<MemberItem> {
         private final JLabel lblDot = new JLabel("● ");
         private final JLabel lblName = new JLabel();

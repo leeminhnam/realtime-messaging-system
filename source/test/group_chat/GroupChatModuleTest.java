@@ -19,7 +19,7 @@ import static testutil.TestSupport.check;
 import static testutil.TestSupport.isStatus;
 import static testutil.TestSupport.request;
 
-/** Kiểm thử Module 3 (Group Chat): GroupDAO, GroupMessageDAO, GroupChatHandler. */
+// Kiểm thử Module 3 (Group Chat): GroupDAO, GroupMessageDAO, GroupChatHandler.
 public class GroupChatModuleTest {
 
     public static void main(String[] args) throws Exception {
@@ -42,7 +42,7 @@ public class GroupChatModuleTest {
         testIsGroupChatAction();
     }
 
-    // ---------- GroupDAO ----------
+    // GroupDAO 
     static void testGroupDao() {
         int id = GroupDAO.createGroup("Nhóm DAO", "gc_lead", List.of("gc_m1", "gc_m2"));
         check("group: tạo nhóm trả về id > 0", id > 0);
@@ -80,7 +80,7 @@ public class GroupChatModuleTest {
                         && GroupMessageDAO.getHistory(id, 50).isEmpty());
     }
 
-    // ---------- GroupMessageDAO ----------
+    // GroupMessageDAO 
     static void testGroupMessageDao() {
         int id = GroupDAO.createGroup("Nhóm tin nhắn", "gc_lead", List.of("gc_m1"));
         GroupMessage m = GroupMessageDAO.saveMessage(id, "gc_lead", "tin 1");
@@ -99,7 +99,7 @@ public class GroupChatModuleTest {
         check("group message: getMessageById không tồn tại -> null", GroupMessageDAO.getMessageById(999999) == null);
     }
 
-    // ---------- GroupChatHandler ----------
+    // GroupChatHandler 
     static JsonObject call(String action, String dataJson, String user, Map<String, PrintWriter> online) {
         Capture out = new Capture();
         GroupChatHandler.handleGroupChatAction(request(action, dataJson), out.writer, user, online);

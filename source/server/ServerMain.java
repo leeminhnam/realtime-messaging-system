@@ -29,9 +29,7 @@ public class ServerMain {
     public static void main(String[] args) {
         ConsoleUtf8.enable();
 
-        System.out.println("==================================================");
-        System.out.println("   CHATNEST - SERVER                              ");
-        System.out.println("==================================================");
+        System.out.println("CHATNEST - SERVER");
 
         // Tạo bảng nếu chưa có, đưa mọi tài khoản về OFFLINE
         DatabaseManager.initDatabase();

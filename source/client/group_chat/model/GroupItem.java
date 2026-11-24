@@ -15,7 +15,6 @@ public class GroupItem {
         this.memberCount = memberCount;
     }
 
-    // Đổi JSON do Server trả về thành đối tượng GroupItem
     public static GroupItem fromJson(JsonObject json) {
         return new GroupItem(
                 json.get("id").getAsInt(),

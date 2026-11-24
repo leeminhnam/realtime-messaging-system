@@ -24,7 +24,7 @@ public class TestSupport {
     private static int failed = 0;
     private static boolean dbReady = false;
 
-    /** Tạo CSDL tạm (chỉ làm một lần) và tự dọn khi kết thúc tiến trình. */
+    // Tạo CSDL tạm (chỉ làm một lần) và tự dọn khi kết thúc tiến trình.
     public static synchronized void initTempDb() throws Exception {
         ConsoleUtf8.enable();
         if (dbReady) {
@@ -37,7 +37,7 @@ public class TestSupport {
         dbReady = true;
     }
 
-    /** Đăng ký nhanh các tài khoản test (họ tên = "Name of <username>"). */
+    // Đăng ký nhanh các tài khoản test (họ tên = "Name of <username>").
     public static void registerUsers(String... usernames) {
         for (String u : usernames) {
             UserDAO.register(u, "pw", "Name of " + u);
@@ -58,13 +58,13 @@ public class TestSupport {
         }
     }
 
-    /** In tổng kết và trả về mã thoát (0 = tất cả đạt). */
+    // In tổng kết và trả về mã thoát (0 = tất cả đạt).
     public static int summary() {
         System.out.println("\nKết quả: " + passed + " đạt, " + failed + " lỗi");
         return failed == 0 ? 0 : 1;
     }
 
-    /** Bộ đệm bắt các dòng JSON mà handler ghi ra (thay cho socket thật). */
+    // Bộ đệm bắt các dòng JSON mà handler ghi ra (thay cho socket thật).
     public static class Capture {
         private final StringWriter sw = new StringWriter();
         public final PrintWriter writer = new PrintWriter(sw, true);
@@ -79,13 +79,13 @@ public class TestSupport {
             return list;
         }
 
-        /** Gói tin cuối cùng đã ghi (null nếu chưa có). */
+        // Gói tin cuối cùng đã ghi (null nếu chưa có).
         public JsonObject last() {
             List<JsonObject> list = all();
             return list.isEmpty() ? null : list.get(list.size() - 1);
         }
 
-        /** Gói tin đầu tiên có action chỉ định (null nếu không có). */
+        // Gói tin đầu tiên có action chỉ định (null nếu không có).
         public JsonObject find(String action) {
             for (JsonObject o : all()) {
                 if (o.has("action") && action.equals(o.get("action").getAsString())) {
@@ -104,7 +104,7 @@ public class TestSupport {
         }
     }
 
-    /** Dựng gói request {"action":..., "data":{...}} từ chuỗi JSON data. */
+    // Dựng gói request {"action":..., "data":{...}} từ chuỗi JSON data.
     public static JsonObject request(String action, String dataJson) {
         JsonObject req = new JsonObject();
         req.addProperty("action", action);

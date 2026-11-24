@@ -17,7 +17,7 @@ import static testutil.TestSupport.check;
 import static testutil.TestSupport.isStatus;
 import static testutil.TestSupport.request;
 
-/** Kiểm thử Module 2 (Private Chat): ConversationDAO, MessageDAO, PrivateChatHandler. */
+// Kiểm thử Module 2 (Private Chat): ConversationDAO, MessageDAO, PrivateChatHandler.
 public class PrivateChatModuleTest {
 
     public static void main(String[] args) throws Exception {
@@ -39,7 +39,7 @@ public class PrivateChatModuleTest {
         testIsPrivateChatAction();
     }
 
-    // ---------- ConversationDAO ----------
+    // ConversationDAO
     static void testConversationDao() {
         Conversation c1 = ConversationDAO.getOrCreateConversation("pc_ann", "pc_bao");
         check("conversation: tạo mới thành công", c1 != null && c1.getId() > 0);
@@ -64,7 +64,7 @@ public class PrivateChatModuleTest {
         check("conversation: getOtherUser trả về đối phương", "pc_bao".equals(c1.getOtherUser("pc_ann")));
     }
 
-    // ---------- MessageDAO ----------
+    // MessageDAO 
     static void testMessageDao() {
         Conversation conv = ConversationDAO.getOrCreateConversation("pc_bao", "pc_chi");
         Message m1 = MessageDAO.saveMessage(conv.getId(), "pc_bao", "xin chào");
@@ -93,7 +93,7 @@ public class PrivateChatModuleTest {
         check("message: getMessageById không tồn tại -> null", MessageDAO.getMessageById(999999) == null);
     }
 
-    // ---------- PrivateChatHandler ----------
+    // PrivateChatHandler 
     static void testHandlerValidation() {
         Map<String, java.io.PrintWriter> online = new HashMap<>();
         Capture out = new Capture();
@@ -165,7 +165,7 @@ public class PrivateChatModuleTest {
 
     static void testHandlerSendOfflineReceiver() {
         Capture sender = new Capture();
-        Map<String, java.io.PrintWriter> online = new HashMap<>(); // pc_chi không online
+        Map<String, java.io.PrintWriter> online = new HashMap<>(); 
 
         PrivateChatHandler.handlePrivateChatAction(
                 request("SEND_PRIVATE_MESSAGE", "{\"receiver\":\"pc_chi\",\"content\":\"gửi offline\"}"),

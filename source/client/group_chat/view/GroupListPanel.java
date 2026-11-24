@@ -14,7 +14,6 @@ public class GroupListPanel extends JPanel {
     private final JList<GroupItem> groupJList = new JList<>(listModel);
     private final JButton btnCreate = new JButton("＋ Tạo nhóm mới");
 
-    // Số tin nhắn chưa xem của từng nhóm (Key: id nhóm)
     private final Map<Integer, Integer> unreadMap = new HashMap<>();
 
     // Cờ tránh kích hoạt sự kiện chọn nhóm khi mình tự cập nhật danh sách
@@ -72,7 +71,6 @@ public class GroupListPanel extends JPanel {
         updating = false;
     }
 
-    // Tên nhóm theo id (null nếu không có trong danh sách)
     public String getGroupName(int groupId) {
         for (int i = 0; i < listModel.size(); i++) {
             if (listModel.get(i).getId() == groupId) {
@@ -100,7 +98,6 @@ public class GroupListPanel extends JPanel {
         groupJList.repaint();
     }
 
-    // Hiển thị tên nhóm, số thành viên, dấu sao nếu mình là trưởng nhóm, số tin chưa xem
     private class GroupCellRenderer extends JPanel implements ListCellRenderer<GroupItem> {
         private final JLabel lblName = new JLabel();
         private final JLabel lblInfo = new JLabel();

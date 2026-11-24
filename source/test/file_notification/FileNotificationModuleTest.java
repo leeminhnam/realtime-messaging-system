@@ -25,7 +25,7 @@ import static testutil.TestSupport.check;
 import static testutil.TestSupport.isStatus;
 import static testutil.TestSupport.request;
 
-/** Kiểm thử Module 4 (File & Notification): FileAttachmentDAO, FileNotificationHandler. */
+// Kiểm thử Module 4 (File & Notification): FileAttachmentDAO, FileNotificationHandler.
 public class FileNotificationModuleTest {
 
     public static void main(String[] args) throws Exception {
@@ -61,7 +61,7 @@ public class FileNotificationModuleTest {
         return sender.last();
     }
 
-    // ---------- FileAttachmentDAO ----------
+    // FileAttachmentDAO 
     static void testFileAttachmentDao() {
         int convId = ConversationDAO.getOrCreateConversation("fn_ann", "fn_bao").getId();
         FileAttachment f = FileAttachmentDAO.saveFileAttachment(
@@ -76,7 +76,7 @@ public class FileNotificationModuleTest {
         check("dao: getFileAttachmentById không tồn tại -> null", FileAttachmentDAO.getFileAttachmentById(999999) == null);
     }
 
-    // ---------- Handler: kiểm tra đầu vào ----------
+    // Handler: kiểm tra đầu vào 
     static void testHandlerValidation() {
         Map<String, PrintWriter> online = new HashMap<>();
         Capture out = new Capture();
@@ -107,7 +107,7 @@ public class FileNotificationModuleTest {
         check("handler: action lạ -> ERROR/FAILED", isStatus(out.last(), "ERROR", "FAILED"));
     }
 
-    // ---------- Handler: gửi file + thông báo realtime ----------
+    // Handler: gửi file + thông báo realtime 
     static void testHandlerSendAndNotify() {
         Capture sender = new Capture();
         Capture receiver = new Capture();
@@ -157,7 +157,7 @@ public class FileNotificationModuleTest {
                 "FILE".equals(off.getAsJsonObject("data").get("fileType").getAsString()));
     }
 
-    // ---------- Handler: nội dung thông báo theo loại tệp ----------
+    // Handler: nội dung thông báo theo loại tệp 
     static void testHandlerNotificationTexts() {
         String[][] cases = {
                 { "IMAGE", "hình ảnh" },
@@ -182,7 +182,7 @@ public class FileNotificationModuleTest {
         }
     }
 
-    // ---------- Handler: tải file ----------
+    // Handler: tải file 
     static void testHandlerDownload() {
         Map<String, PrintWriter> online = new HashMap<>();
         String original = "Dữ liệu tải về phải giống hệt bản gốc";
@@ -219,7 +219,7 @@ public class FileNotificationModuleTest {
         check("handler DOWNLOAD: tệp đã mất trên đĩa -> FAILED", isStatus(dl.last(), "DOWNLOAD_FILE_RESPONSE", "FAILED"));
     }
 
-    // ---------- Handler: gửi tệp / ghi âm trong nhóm ----------
+    // Handler: gửi tệp / ghi âm trong nhóm 
     static void testHandlerGroupFile() {
         int gid = GroupDAO.createGroup("Nhóm gửi tệp", "fn_ann", List.of("fn_bao", "fn_cuong"));
         Map<String, PrintWriter> online = new HashMap<>();

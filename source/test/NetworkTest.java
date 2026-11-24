@@ -1,6 +1,6 @@
 /**
- * Kiem thu mang (Server that + nhieu Client socket). Chay sau khi bien dich: java -cp "out_test;source/lib/*" NetworkTest
- * Dung CSDL tam (-Dchatnest.db.dir) va cong 8888: hay tat Server dang chay truoc khi chay.
+ * Kiểm thử mạng (Server thật + nhiều Client socket). Chạy sau khi biên dịch: java -cp "out_test;source/lib/*" NetworkTest
+ * Dùng CSDL tạm (-Dchatnest.db.dir) va cong 8888: hãy tắt Server đang chạy trước khi chạy.
  */
 import com.google.gson.*;
 
@@ -13,7 +13,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
-/** Bo do kiem thu mang cho ChatNest (chay server that + nhieu client socket that). */
+// Bộ kiểm thử mạng cho ChatNest (chạy server thật + nhiều client socket thật).
 public class NetworkTest {
     static final Gson gson = new Gson();
 
@@ -97,7 +97,7 @@ public class NetworkTest {
         Thread srv = new Thread(() -> ServerMain.main(new String[0])); srv.setDaemon(true); srv.start();
         Thread.sleep(1500);
 
-        // ---------- T1: ket noi / ngat ket noi ----------
+        // T1: kết nối / ngắt kết nối
         try (Cli A = new Cli("net_a"); Cli B = new Cli("net_b")) {
             boolean reg = A.register() & B.register();
             boolean la = A.login();
@@ -115,7 +115,7 @@ public class NetworkTest {
             row("T1.2", "B dong ket noi; A nhan thong bao B OFFLINE", ok2 ? "DAT" : "LOI", offMs + " ms");
         }
 
-        // ---------- T2: nhieu client dong thoi ----------
+        // T2: nhiều client đồng thời 
         int[][] runs = { { 10, 0 }, { 50, 0 }, { 100, 0 }, { 100, 10 } };
         for (int[] run : runs) {
             int n = run[0], stagger = run[1];
@@ -157,7 +157,7 @@ public class NetworkTest {
             Thread.sleep(800);
         }
 
-        // ---------- T3: trao doi hai chieu ----------
+        //  T3: trao đổi hai chiều 
         try (Cli A = new Cli("bi_a"); Cli B = new Cli("bi_b")) {
             A.register(); B.register(); A.login(); B.login();
             int N = 200;
@@ -175,7 +175,6 @@ public class NetworkTest {
                 int v = Integer.parseInt(m.getAsJsonObject("data").get("content").getAsString().substring(1)); if (v != lastA + 1) orderOk = false; lastA = v;
             }
             long ms = (System.nanoTime() - t0) / 1_000_000;
-            // lich su sau trao doi
             A.send("GET_CHAT_HISTORY", obj("targetUser", "bi_b"));
             JsonObject h = A.take("GET_CHAT_HISTORY_RESPONSE", 10000);
             int hist = h == null ? -1 : h.getAsJsonObject("data").getAsJsonArray("messages").size();
@@ -183,7 +182,7 @@ public class NetworkTest {
                     "A nhan " + gotA + "/" + N + ", B nhan " + gotB + "/" + N + ", thu tu " + (orderOk ? "dung" : "sai") + ", tong " + ms + " ms; lich su tra ve " + hist + " tin (gioi han 50)");
         }
 
-        // ---------- T4: truyen tep nhieu kich thuoc ----------
+        // T4: truyền tệp nhiều kích thước 
         try (Cli A = new Cli("ft_a"); Cli B = new Cli("ft_b")) {
             A.register(); B.register(); A.login(); B.login();
             Random rnd = new Random(7);
@@ -210,38 +209,38 @@ public class NetworkTest {
             }
         }
 
-        // ---------- T5: loi va gian doan ----------
+        // T5: lỗi và gián đoạn 
         try (Cli A = new Cli("er_a"); Cli B = new Cli("er_b")) {
             A.register(); B.register();
-            // chua dang nhap
+            // Chưa đăng nhập
             A.send("SEND_PRIVATE_MESSAGE", obj("receiver", "er_b", "content", "x"));
             JsonObject r1 = A.take("ERROR", 5000);
             row("T5.1", "Gui tin khi chua dang nhap", (r1 != null && r1.get("status").getAsString().equals("FAILED")) ? "DAT" : "LOI", "server tra ERROR/FAILED");
             A.login(); B.login();
-            // action la
+            // Action lạ
             A.send("DO_SOMETHING", null);
             JsonObject r2 = A.take("ERROR", 5000);
             row("T5.2", "Gui action khong ho tro", (r2 != null && r2.get("status").getAsString().equals("FAILED")) ? "DAT" : "LOI", "server tra ERROR/FAILED");
-            // JSON sai dinh dang
+            // JSON sai định dạng
             A.w.println("{day khong phai json");
             A.send("GET_USER_LIST", null);
             JsonObject r3 = A.take("GET_USER_LIST_RESPONSE", 5000);
             row("T5.3", "Gui dong JSON sai dinh dang, sau do gui yeu cau hop le", r3 != null ? "DAT" : "LOI", "server bo qua goi loi (khong phan hoi) va van phuc vu yeu cau tiep theo tren cung ket noi");
-            // base64 sai
+            // Base64 sai
             A.send("SEND_FILE", obj("receiver", "er_b", "fileName", "x.bin", "base64Data", "@@@khong-phai-base64"));
             JsonObject r4 = A.take("SEND_FILE_RESPONSE", 5000);
             row("T5.4", "Gui tep co du lieu Base64 khong hop le", (r4 != null && r4.get("status").getAsString().equals("FAILED")) ? "DAT" : "LOI", "server tra FAILED, khong sap");
-            // tai tep khong ton tai
+            // Tải tệp không tồn tại
             B.send("DOWNLOAD_FILE", fileIdObj(999999));
             JsonObject r5 = B.take("DOWNLOAD_FILE_RESPONSE", 5000);
             row("T5.5", "Tai tep khong ton tai", (r5 != null && r5.get("status").getAsString().equals("FAILED")) ? "DAT" : "LOI", "server tra FAILED");
-            // dang nhap sai mat khau
+            // Đăng nhập sai mật khẩu
             try (Cli C = new Cli("er_a")) {
                 C.send("LOGIN", obj("username", "er_a", "password", "sai"));
                 JsonObject r6 = C.take("LOGIN_RESPONSE", 5000);
                 row("T5.6", "Dang nhap sai mat khau", (r6 != null && r6.get("status").getAsString().equals("FAILED")) ? "DAT" : "LOI", "server tra FAILED");
             }
-            // dong dot ngot khi dang online: B dong socket, A gui tin cho B (offline) roi B dang nhap lai
+            // Đóng đột ngột khi đang online: B đóng socket, A gửi tin cho B (offline) rồi B đăng nhập lại
             B.close();
             JsonObject off = A.takeWhere("USER_STATUS_CHANGE", "username", "er_b", 5000);
             A.send("SEND_PRIVATE_MESSAGE", obj("receiver", "er_b", "content", "tin khi B offline"));
@@ -256,7 +255,7 @@ public class NetworkTest {
             }
         }
 
-        // ---------- T6: chat nhom ----------
+        // T6: chat nhom
         try (Cli A = new Cli("gr_a"); Cli B = new Cli("gr_b"); Cli C = new Cli("gr_c")) {
             A.register(); B.register(); C.register(); A.login(); B.login(); C.login();
             JsonObject d = obj("name", "Nhom test"); JsonArray m = new JsonArray(); m.add("gr_b"); m.add("gr_c"); d.add("members", m);

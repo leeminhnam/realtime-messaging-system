@@ -31,8 +31,8 @@ public class GroupChatController {
     private final String currentUsername;
 
     private GroupMembersDialog membersDialog;
-    private int pendingOpenGroupId = 0; // Nhóm vừa tạo, mở ngay khi danh sách nhóm được tải về
-    private Runnable showGroupTab; // MainFrame gán: chuyển sidebar sang tab Nhóm
+    private int pendingOpenGroupId = 0;
+    private Runnable showGroupTab; 
 
     public GroupChatController(JFrame parent, GroupListPanel listView, GroupChatPanel chatView,
             UserListPanel userListPanel, PrintWriter writer, String currentUsername) {
@@ -48,19 +48,14 @@ public class GroupChatController {
     }
 
     private void initEventHandlers() {
-        // Chọn một nhóm trong danh sách -> mở khung chat nhóm
         listView.setGroupSelectListener(this::openGroup);
 
-        // Bấm nút tạo nhóm mới
         listView.setCreateListener(this::showCreateDialog);
 
-        // Bấm nút xem thành viên ở header
         chatView.setMembersListener(this::showMembersDialog);
 
-        // Gõ tin nhắn rồi gửi
         chatView.getInputPanel().setSendMessageListener(this::sendGroupMessage);
 
-        // Gửi ảnh, video, tài liệu vào nhóm đang mở
         chatView.getInputPanel().setSendFileListener((file, fileType) -> {
             int groupId = chatView.getCurrentGroupId();
             if (groupId != 0) {
@@ -68,7 +63,6 @@ public class GroupChatController {
             }
         });
 
-        // Gửi đoạn ghi âm vào nhóm đang mở
         chatView.getInputPanel().setSendVoiceListener((wavBytes, durationSeconds) -> {
             int groupId = chatView.getCurrentGroupId();
             if (groupId != 0) {
@@ -82,7 +76,6 @@ public class GroupChatController {
         this.showGroupTab = showGroupTab;
     }
 
-    // Gói này có phải của chat nhóm không
     public static boolean isGroupAction(String action) {
         return "CREATE_GROUP_RESPONSE".equalsIgnoreCase(action)
                 || "GET_MY_GROUPS_RESPONSE".equalsIgnoreCase(action)
@@ -100,7 +93,6 @@ public class GroupChatController {
                 || "GROUP_UPDATED".equalsIgnoreCase(action);
     }
 
-    // Xử lý các gói chat nhóm, hàm này luôn được gọi trên luồng giao diện
     public void handleServerMessage(JsonObject msg) {
         String action = msg.get("action").getAsString();
         boolean success = msg.has("status") && "SUCCESS".equalsIgnoreCase(msg.get("status").getAsString());
@@ -113,7 +105,7 @@ public class GroupChatController {
                     if (success) onGroupsReceived(data);
                     break;
                 case "GROUP_UPDATED":
-                    loadGroups(); // nhóm thay đổi thì tải lại danh sách
+                    loadGroups();
                     break;
                 case "GROUP_DELETED":
                     onGroupDeleted(data);
@@ -138,15 +130,12 @@ public class GroupChatController {
                     else showError(message);
                     break;
                 default:
-                    // Thêm / xóa / chuyển quyền / rời nhóm: thành công thì GROUP_UPDATED sẽ làm mới, thất bại thì báo lỗi
                     if (!success) showError(message);
                     break;
             }
         });
     }
 
-    // ---- Gửi yêu cầu ----
-    // Đóng gói rồi gửi một yêu cầu JSON lên Server
     private void sendRequest(String action, JsonObject data) {
         JsonObject req = new JsonObject();
         req.addProperty("action", action);
@@ -154,12 +143,10 @@ public class GroupChatController {
         writer.println(gson.toJson(req));
     }
 
-    // Tải danh sách nhóm mà mình tham gia
     public void loadGroups() {
         sendRequest("GET_MY_GROUPS", new JsonObject());
     }
 
-    // Mở khung chat của nhóm và tải lịch sử tin nhắn
     private void openGroup(GroupItem group) {
         if (membersDialog != null) {
             membersDialog.setVisible(false);
@@ -173,7 +160,6 @@ public class GroupChatController {
         sendRequest("GET_GROUP_HISTORY", data);
     }
 
-    // Gửi tin nhắn vào nhóm đang mở
     private void sendGroupMessage(String content) {
         int groupId = chatView.getCurrentGroupId();
         if (groupId == 0 || content.trim().isEmpty()) {
@@ -185,15 +171,13 @@ public class GroupChatController {
         sendRequest("SEND_GROUP_MESSAGE", data);
     }
 
-    // Yêu cầu Server trả về danh sách thành viên của nhóm
     private void requestMembers(int groupId) {
         JsonObject data = new JsonObject();
         data.addProperty("groupId", groupId);
         sendRequest("GET_GROUP_MEMBERS", data);
     }
 
-    // ---- Hộp thoại ----
-    // Mở hộp thoại chọn tên nhóm + thành viên rồi gửi yêu cầu tạo nhóm
+    // Mở hộp thoại tạo nhóm
     private void showCreateDialog() {
         CreateGroupDialog dialog = new CreateGroupDialog(parent, userListPanel.getUsers(), (name, members) -> {
             JsonObject data = new JsonObject();
@@ -245,7 +229,7 @@ public class GroupChatController {
         membersDialog.setVisible(true);
     }
 
-    // Trưởng nhóm chọn một người dùng chưa có trong nhóm để thêm vào
+    // Thêm thành viên nhóm
     private void addMember() {
         List<UserListPanel.UserItem> candidates = new ArrayList<>();
         for (UserListPanel.UserItem user : userListPanel.getUsers()) {
@@ -275,7 +259,7 @@ public class GroupChatController {
         }
     }
 
-    // Trưởng nhóm xóa một thành viên (có hỏi xác nhận)
+    // Xóa thành viên
     private void removeMember(String username) {
         int ok = JOptionPane.showConfirmDialog(membersDialog, "Xóa @" + username + " khỏi nhóm?", "Xác nhận",
                 JOptionPane.YES_NO_OPTION);
@@ -284,7 +268,7 @@ public class GroupChatController {
         }
     }
 
-    // Trưởng nhóm chuyển quyền cho thành viên khác (có hỏi xác nhận)
+    // Chuyển quyền trưởng nhóm
     private void transferLeader(String username) {
         int ok = JOptionPane.showConfirmDialog(membersDialog,
                 "Chuyển quyền trưởng nhóm cho @" + username + "?", "Xác nhận", JOptionPane.YES_NO_OPTION);
@@ -293,7 +277,7 @@ public class GroupChatController {
         }
     }
 
-    // Rời khỏi nhóm đang mở (có hỏi xác nhận)
+    // Rời khỏi nhóm đang mở
     private void leaveGroup() {
         int ok = JOptionPane.showConfirmDialog(membersDialog, "Bạn chắc chắn muốn rời nhóm?", "Xác nhận",
                 JOptionPane.YES_NO_OPTION);
@@ -304,7 +288,7 @@ public class GroupChatController {
         }
     }
 
-    // Trưởng nhóm xóa hẳn nhóm đang mở (có hỏi xác nhận, vì không thể hoàn tác)
+    // Xóa nhóm
     private void deleteGroup() {
         GroupItem group = chatView.getCurrentGroup();
         if (group == null) {
@@ -328,7 +312,7 @@ public class GroupChatController {
         sendRequest(action, data);
     }
 
-    // Kiểm tra một user đã nằm trong nhóm (theo danh sách thành viên đang hiển thị) chưa
+    // Kiểm tra một user đã nằm trong nhóm
     private boolean isInGroup(String username) {
         for (MemberItem m : membersDialog.getMembers()) {
             if (m.getUsername().equalsIgnoreCase(username)) {
@@ -342,15 +326,12 @@ public class GroupChatController {
         JOptionPane.showMessageDialog(parent, message, "Lỗi", JOptionPane.ERROR_MESSAGE);
     }
 
-    // ---- Xử lý gói Server trả về ----
-    // Nhận danh sách nhóm: cập nhật danh sách, header; nếu mình không còn trong nhóm đang mở thì đóng lại
     private void onGroupsReceived(JsonObject data) {
         List<GroupItem> groups = new ArrayList<>();
         for (JsonElement elem : data.getAsJsonArray("groups")) {
             groups.add(GroupItem.fromJson(elem.getAsJsonObject()));
         }
 
-        // Vừa tạo nhóm xong -> mở luôn nhóm đó
         GroupItem created = findGroup(groups, pendingOpenGroupId);
         if (created != null) {
             pendingOpenGroupId = 0;
@@ -365,7 +346,6 @@ public class GroupChatController {
         listView.setGroups(groups, currentId);
 
         if (current != null && updated == null) {
-            // Bị xóa khỏi nhóm hoặc đã rời nhóm
             chatView.showPlaceholder();
             if (membersDialog != null) {
                 membersDialog.setVisible(false);
@@ -379,7 +359,6 @@ public class GroupChatController {
         }
     }
 
-    // Nhóm bị xóa: đang mở nhóm đó thì đóng lại và báo cho người dùng, sau đó tải lại danh sách nhóm
     private void onGroupDeleted(JsonObject data) {
         int groupId = data.get("groupId").getAsInt();
         String groupName = data.get("groupName").getAsString();
@@ -399,7 +378,7 @@ public class GroupChatController {
         loadGroups();
     }
 
-    // Nhận danh sách thành viên -> đổ vào hộp thoại
+    // Nhận danh sách thành viên
     private void onMembersReceived(JsonObject data) {
         if (membersDialog == null || data.get("groupId").getAsInt() != chatView.getCurrentGroupId()) {
             return;
@@ -423,7 +402,7 @@ public class GroupChatController {
         chatView.getMessageListPanel().setMessages(list);
     }
 
-    // Có tin nhắn mới (của mình hoặc của người khác): đang mở nhóm đó thì hiện bong bóng, không thì tăng số tin chưa xem
+    // Nhận tin nhắn mới
     private void onMessageArrived(JsonObject data, boolean fromOthers) {
         int groupId = data.get("groupId").getAsInt();
         if (groupId == chatView.getCurrentGroupId()) {
@@ -433,7 +412,7 @@ public class GroupChatController {
         }
     }
 
-    // Hiện thông báo nổi cho tin nhóm, trừ khi người dùng đang nhìn đúng nhóm đó
+    // Hiện thông báo nổi cho tin nhóm
     private void showGroupNotification(JsonObject data) {
         int groupId = data.get("groupId").getAsInt();
         boolean watching = groupId == chatView.getCurrentGroupId() && chatView.isShowing() && parent.isActive();
@@ -473,7 +452,6 @@ public class GroupChatController {
         }
 
         NotificationToast.showNotification(parent, type, title, text, () -> {
-            // Bấm vào thông báo thì chuyển sang tab Nhóm và mở nhóm đó
             if (showGroupTab != null) {
                 showGroupTab.run();
             }
