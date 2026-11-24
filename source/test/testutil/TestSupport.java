@@ -1,6 +1,6 @@
 package testutil;
 
-import account.UserDAO;
+import account.dao.UserDAO;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import database.DatabaseManager;

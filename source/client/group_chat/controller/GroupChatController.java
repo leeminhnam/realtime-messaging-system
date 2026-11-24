@@ -1,6 +1,7 @@
 package group_chat.controller;
 
-import account.UserListPanel;
+import account.view.UserListPanel;
+import account.model.UserItem;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -236,8 +237,8 @@ public class GroupChatController {
 
     // Thêm thành viên nhóm
     private void addMember() {
-        List<UserListPanel.UserItem> candidates = new ArrayList<>();
-        for (UserListPanel.UserItem user : userListPanel.getUsers()) {
+        List<UserItem> candidates = new ArrayList<>();
+        for (UserItem user : userListPanel.getUsers()) {
             if (!isInGroup(user.getUsername())) {
                 candidates.add(user);
             }

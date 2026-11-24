@@ -1,14 +1,9 @@
-package account;
+package account.view;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import account.controller.AccountController;
 
 import javax.swing.*;
 import java.awt.*;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.Socket;
 
 public class RegisterFrame extends JFrame {
     private final String host;
@@ -95,46 +90,17 @@ public class RegisterFrame extends JFrame {
             return;
         }
 
-        new Thread(() -> {
-            try (Socket socket = new Socket(host, port);
-                    PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
-                    BufferedReader reader = new BufferedReader(
-                            new InputStreamReader(socket.getInputStream(), "UTF-8"))) {
-
-                // Đóng gói JSON đăng ký
-                JsonObject req = new JsonObject();
-                req.addProperty("action", "REGISTER");
-                JsonObject data = new JsonObject();
-                data.addProperty("username", username);
-                data.addProperty("password", password);
-                data.addProperty("fullName", fullName);
-                req.add("data", data);
-
-                // Gửi sang Server
-                writer.println(req.toString());
-
-                // Đọc phản hồi
-                String responseStr = reader.readLine();
-                if (responseStr != null) {
-                    JsonObject res = JsonParser.parseString(responseStr).getAsJsonObject();
-                    String status = res.get("status").getAsString();
-                    String message = res.get("message").getAsString();
-
-                    SwingUtilities.invokeLater(() -> {
-                        if ("SUCCESS".equalsIgnoreCase(status)) {
-                            JOptionPane.showMessageDialog(this, message, "Thành công", JOptionPane.INFORMATION_MESSAGE);
-                            dispose();
-                        } else {
-                            JOptionPane.showMessageDialog(this, message, "Lỗi đăng ký", JOptionPane.ERROR_MESSAGE);
-                        }
-                    });
-                }
-            } catch (Exception ex) {
-                SwingUtilities.invokeLater(() -> {
-                    JOptionPane.showMessageDialog(this, "Không thể kết nối tới Server: " + ex.getMessage(),
-                            "Lỗi kết nối", JOptionPane.ERROR_MESSAGE);
-                });
-            }
-        }).start();
+        // Việc mở Socket và gửi/nhận JSON được xử lý trong Controller.
+        AccountController.registerAsync(host, port, username, password, fullName,
+                (status, message) -> {
+                    if ("SUCCESS".equalsIgnoreCase(status)) {
+                        JOptionPane.showMessageDialog(this, message, "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                        dispose();
+                    } else {
+                        JOptionPane.showMessageDialog(this, message, "Lỗi đăng ký", JOptionPane.ERROR_MESSAGE);
+                    }
+                },
+                ex -> JOptionPane.showMessageDialog(this, "Không thể kết nối tới Server: " + ex.getMessage(),
+                        "Lỗi kết nối", JOptionPane.ERROR_MESSAGE));
     }
 }

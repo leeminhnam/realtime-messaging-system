@@ -1,5 +1,5 @@
-import account.ProfileDialog;
-import account.UserListPanel;
+import account.view.ProfileDialog;
+import account.view.UserListPanel;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;

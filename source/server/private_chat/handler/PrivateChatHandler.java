@@ -1,6 +1,6 @@
 package private_chat.handler;
 
-import account.UserDAO;
+import account.dao.UserDAO;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import private_chat.dao.ConversationDAO;

@@ -1,5 +1,6 @@
-package account;
+package account.view;
 
+import account.controller.AccountController;
 import com.google.gson.JsonObject;
 
 import javax.swing.*;
@@ -79,14 +80,8 @@ public class ProfileDialog extends JDialog {
             return;
         }
 
-        JsonObject req = new JsonObject();
-        req.addProperty("action", "UPDATE_PROFILE");
-        JsonObject data = new JsonObject();
-        data.addProperty("fullName", newFullName);
-        data.addProperty("avatar", ""); // chưa hỗ trợ đổi avatar
-        req.add("data", data);
-
-        writer.println(req.toString());
+        // Controller đóng gói yêu cầu UPDATE_PROFILE và gửi qua Socket hiện tại.
+        AccountController.sendUpdateProfile(writer, newFullName);
 
         currentUser.addProperty("fullName", newFullName);
 

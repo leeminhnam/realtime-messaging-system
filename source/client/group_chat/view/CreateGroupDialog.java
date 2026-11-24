@@ -1,6 +1,7 @@
 package group_chat.view;
 
-import account.UserListPanel;
+import account.view.UserListPanel;
+import account.model.UserItem;
 
 import javax.swing.*;
 import java.awt.*;
@@ -17,7 +18,7 @@ public class CreateGroupDialog extends JDialog {
     private final JTextField txtName = new JTextField();
     private final List<JCheckBox> checkBoxes = new ArrayList<>();
 
-    public CreateGroupDialog(Frame parent, List<UserListPanel.UserItem> users, CreateListener listener) {
+    public CreateGroupDialog(Frame parent, List<UserItem> users, CreateListener listener) {
         super(parent, "Tạo nhóm mới", true);
         setSize(380, 460);
         setLocationRelativeTo(parent);
@@ -30,7 +31,7 @@ public class CreateGroupDialog extends JDialog {
 
         JPanel checkPanel = new JPanel();
         checkPanel.setLayout(new BoxLayout(checkPanel, BoxLayout.Y_AXIS));
-        for (UserListPanel.UserItem user : users) {
+        for (UserItem user : users) {
             JCheckBox cb = new JCheckBox(user.getFullName() + " (@" + user.getUsername() + ")");
             cb.setActionCommand(user.getUsername());
             checkBoxes.add(cb);

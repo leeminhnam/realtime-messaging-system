@@ -1,5 +1,5 @@
-import account.AccountHandler;
-import account.UserDAO;
+import account.handler.AccountHandler;
+import account.dao.UserDAO;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import database.DatabaseManager;

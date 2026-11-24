@@ -1,6 +1,6 @@
 package group_chat.handler;
 
-import account.UserDAO;
+import account.dao.UserDAO;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;

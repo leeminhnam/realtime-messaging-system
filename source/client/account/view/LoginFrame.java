@@ -1,12 +1,11 @@
-package account;
+package account.view;
 
+import account.controller.AccountController;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 
 import javax.swing.*;
 import java.awt.*;
 import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
@@ -90,47 +89,18 @@ public class LoginFrame extends JFrame {
             return;
         }
 
-        new Thread(() -> {
-            try {
-                Socket socket = new Socket(SERVER_HOST, SERVER_PORT);
-                PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
-                BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
-
-                JsonObject req = new JsonObject();
-                req.addProperty("action", "LOGIN");
-                JsonObject data = new JsonObject();
-                data.addProperty("username", username);
-                data.addProperty("password", password);
-                req.add("data", data);
-
-                writer.println(req.toString());
-
-                String resStr = reader.readLine();
-                if (resStr != null) {
-                    JsonObject res = JsonParser.parseString(resStr).getAsJsonObject();
-                    String status = res.get("status").getAsString();
-                    String message = res.get("message").getAsString();
-
-                    SwingUtilities.invokeLater(() -> {
-                        if ("SUCCESS".equalsIgnoreCase(status)) {
-                            JsonObject userData = res.getAsJsonObject("data");
-                            dispose(); // đóng màn hình đăng nhập
-
-                            if (loginSuccessCallback != null) {
-                                loginSuccessCallback.onLoginSuccess(socket, reader, writer, userData);
-                            }
-                        } else {
-                            JOptionPane.showMessageDialog(this, message, "Đăng nhập thất bại",
-                                    JOptionPane.ERROR_MESSAGE);
-                        }
-                    });
-                }
-            } catch (Exception ex) {
-                SwingUtilities.invokeLater(() -> {
-                    JOptionPane.showMessageDialog(this, "Lỗi kết nối Server: " + ex.getMessage(), "Lỗi",
-                            JOptionPane.ERROR_MESSAGE);
-                });
-            }
-        }).start();
+        // Controller thực hiện kết nối mạng; View chỉ chịu trách nhiệm hiển thị kết quả.
+        AccountController.loginAsync(SERVER_HOST, SERVER_PORT, username, password,
+                session -> {
+                    dispose(); // đóng màn hình đăng nhập
+                    if (loginSuccessCallback != null) {
+                        loginSuccessCallback.onLoginSuccess(session.getSocket(), session.getReader(),
+                                session.getWriter(), session.getUserData());
+                    }
+                },
+                message -> JOptionPane.showMessageDialog(this, message, "Đăng nhập thất bại",
+                        JOptionPane.ERROR_MESSAGE),
+                ex -> JOptionPane.showMessageDialog(this, "Lỗi kết nối Server: " + ex.getMessage(), "Lỗi",
+                        JOptionPane.ERROR_MESSAGE));
     }
 }

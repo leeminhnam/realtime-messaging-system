@@ -1,6 +1,6 @@
 package file_notification.handler;
 
-import account.UserDAO;
+import account.dao.UserDAO;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import file_notification.dao.FileAttachmentDAO;

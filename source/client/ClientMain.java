@@ -1,4 +1,4 @@
-import account.LoginFrame;
+import account.view.LoginFrame;
 import com.formdev.flatlaf.FlatLightLaf;
 
 import javax.swing.*;

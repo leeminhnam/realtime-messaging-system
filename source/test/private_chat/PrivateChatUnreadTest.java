@@ -1,6 +1,7 @@
 package private_chat;
 
-import account.UserListPanel;
+import account.view.UserListPanel;
+import account.model.UserItem;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import private_chat.controller.PrivateChatController;
@@ -181,7 +182,7 @@ public class PrivateChatUnreadTest {
     @SuppressWarnings("unchecked")
     private static String row(int index) {
         JScrollPane scroll = (JScrollPane) users.getComponent(0);
-        JList<UserListPanel.UserItem> list = (JList<UserListPanel.UserItem>) scroll.getViewport().getView();
+        JList<UserItem> list = (JList<UserItem>) scroll.getViewport().getView();
         Component cell = list.getCellRenderer().getListCellRendererComponent(
                 list, list.getModel().getElementAt(index), index, false, false);
         StringBuilder text = new StringBuilder();
@@ -196,7 +197,7 @@ public class PrivateChatUnreadTest {
     @SuppressWarnings("unchecked")
     private static boolean unreadFits(int index, String expected) {
         JScrollPane scroll = (JScrollPane) users.getComponent(0);
-        JList<UserListPanel.UserItem> list = (JList<UserListPanel.UserItem>) scroll.getViewport().getView();
+        JList<UserItem> list = (JList<UserItem>) scroll.getViewport().getView();
         JPanel cell = (JPanel) list.getCellRenderer().getListCellRendererComponent(
                 list, list.getModel().getElementAt(index), index, false, false);
         // Sidebar 280px còn phải trừ viền và thanh cuộn.

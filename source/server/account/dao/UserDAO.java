@@ -1,11 +1,11 @@
-package account;
+package account.dao;
 
+import account.model.User;
 import database.DatabaseManager;
 import org.mindrot.jbcrypt.BCrypt;
 
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -47,12 +47,9 @@ public class UserDAO {
                     // Chuyển trạng thái sang ONLINE
                     updateStatus(username, "ONLINE");
 
-                    Map<String, String> user = new HashMap<>();
-                    user.put("username", rs.getString("username"));
-                    user.put("fullName", rs.getString("full_name"));
-                    user.put("avatar", rs.getString("avatar"));
-                    user.put("status", "ONLINE");
-                    return user;
+                    User user = new User(rs.getString("username"), rs.getString("full_name"),
+                            rs.getString("avatar"), "ONLINE");
+                    return user.toMap();
                 }
             }
         } catch (SQLException e) {
@@ -84,12 +81,9 @@ public class UserDAO {
                 ResultSet rs = stmt.executeQuery(sql)) {
 
             while (rs.next()) {
-                Map<String, String> user = new HashMap<>();
-                user.put("username", rs.getString("username"));
-                user.put("fullName", rs.getString("full_name"));
-                user.put("avatar", rs.getString("avatar"));
-                user.put("status", rs.getString("status"));
-                userList.add(user);
+                User user = new User(rs.getString("username"), rs.getString("full_name"),
+                        rs.getString("avatar"), rs.getString("status"));
+                userList.add(user.toMap());
             }
         } catch (SQLException e) {
             System.err.println("[UserDAO] Lỗi lấy danh sách user: " + e.getMessage());
@@ -120,12 +114,9 @@ public class UserDAO {
             pstmt.setString(1, username);
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
-                Map<String, String> user = new HashMap<>();
-                user.put("username", rs.getString("username"));
-                user.put("fullName", rs.getString("full_name"));
-                user.put("avatar", rs.getString("avatar"));
-                user.put("status", rs.getString("status"));
-                return user;
+                User user = new User(rs.getString("username"), rs.getString("full_name"),
+                        rs.getString("avatar"), rs.getString("status"));
+                return user.toMap();
             }
         } catch (SQLException e) {
             System.err.println("[UserDAO] Lỗi tìm user: " + e.getMessage());

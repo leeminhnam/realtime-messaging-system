@@ -1,5 +1,6 @@
-package account;
+package account.view;
 
+import account.model.UserItem;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -116,35 +117,6 @@ public class UserListPanel extends JPanel {
     // Danh bạ hiện tại, dùng khi tạo nhóm hoặc thêm thành viên
     public java.util.List<UserItem> getUsers() {
         return java.util.Collections.list(listModel.elements());
-    }
-
-    // Một dòng trong danh bạ
-    public static class UserItem {
-        private final String username;
-        private final String fullName;
-        private String status;
-
-        public UserItem(String username, String fullName, String status) {
-            this.username = username;
-            this.fullName = fullName;
-            this.status = status;
-        }
-
-        public String getUsername() {
-            return username;
-        }
-
-        public String getFullName() {
-            return fullName;
-        }
-
-        public String getStatus() {
-            return status;
-        }
-
-        public void setStatus(String status) {
-            this.status = status;
-        }
     }
 
     // Vẽ chấm xanh cho người online, xám cho người offline
