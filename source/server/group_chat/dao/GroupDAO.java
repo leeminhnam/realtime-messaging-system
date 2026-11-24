@@ -20,8 +20,7 @@ public class GroupDAO {
             + "(SELECT COUNT(*) FROM group_members WHERE group_id = g.id) AS member_count "
             + "FROM chat_groups g ";
 
-    // Tạo nhóm và thêm thành viên trong cùng một transaction: lỗi giữa chừng thì rollback hết,
-    // không để lại nhóm thiếu thành viên hoặc không có trưởng nhóm
+    // Tạo nhóm
     public static int createGroup(String name, String leader, List<String> members) {
         String sql = "INSERT INTO chat_groups(name, created_at) VALUES(?, datetime('now', 'localtime'))";
 
@@ -66,7 +65,7 @@ public class GroupDAO {
         }
     }
 
-    // Thêm thành viên trên connection có sẵn để dùng chung trong transaction
+    // Thêm thành viên
     private static void insertMember(Connection conn, int groupId, String username, String role) throws SQLException {
         String sql = "INSERT INTO group_members(group_id, username, role, joined_at) "
                 + "VALUES(?, ?, ?, datetime('now', 'localtime'))";
@@ -111,8 +110,7 @@ public class GroupDAO {
         }
     }
 
-    // Hạ trưởng nhóm cũ và nâng người mới trong cùng một transaction.
-    // Chỉ commit khi cả hai bước đều đổi đúng 1 dòng, nếu không thì rollback để nhóm luôn có đúng 1 trưởng nhóm
+    // Chuyển quyền trưởng nhóm
     public static boolean transferLeader(int groupId, String oldLeader, String newLeader) {
         String demote = "UPDATE group_members SET role = 'MEMBER' WHERE group_id = ? AND username = ? AND role = 'LEADER'";
         String promote = "UPDATE group_members SET role = 'LEADER' WHERE group_id = ? AND username = ? AND role = 'MEMBER'";
@@ -143,8 +141,7 @@ public class GroupDAO {
         }
     }
 
-    // Xóa nhóm: 4 câu DELETE chạy trong một transaction, lỗi giữa chừng thì rollback
-    // để không còn dữ liệu dở dang. Tệp trên đĩa chỉ xóa sau khi commit thành công
+    // Xóa nhóm
     public static boolean deleteGroup(int groupId) {
         List<String> storedFiles = FileAttachmentDAO.getStoredPathsOfGroup(groupId);
         String[] sqls = {

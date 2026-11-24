@@ -39,7 +39,6 @@ public class GroupChatHandler {
                 || "GET_GROUP_HISTORY".equalsIgnoreCase(action);
     }
 
-    // Mọi action chat nhóm đều cần đăng nhập trước
     public static void handleGroupChatAction(JsonObject req, PrintWriter writer, String currentUsername,
             Map<String, PrintWriter> onlineClients) {
 
@@ -316,8 +315,6 @@ public class GroupChatHandler {
             return;
         }
 
-        // Lưu có điều kiện "người gửi vẫn còn trong nhóm" ngay trong câu INSERT,
-        // tránh trường hợp bị xóa khỏi nhóm đúng lúc giữa bước kiểm tra và bước lưu
         GroupMessage saved = GroupMessageDAO.saveMessageIfMember(groupId, currentUsername, content);
         if (saved == null) {
             String reason = GroupDAO.getRole(groupId, currentUsername) == null

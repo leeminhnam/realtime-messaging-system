@@ -36,8 +36,6 @@ public class GroupMessageDAO {
         return null;
     }
 
-    // Chỉ lưu khi người gửi còn là thành viên nhóm. Điều kiện nằm ngay trong câu INSERT
-    // nên kiểm tra và ghi là một thao tác nguyên tử. Trả về null nếu không còn trong nhóm hoặc lỗi
     public static GroupMessage saveMessageIfMember(int groupId, String senderUsername, String content) {
         String sql = "INSERT INTO group_messages(group_id, sender_username, content, sent_at) "
                 + "SELECT ?, ?, ?, datetime('now', 'localtime') "
