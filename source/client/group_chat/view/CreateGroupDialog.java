@@ -1,6 +1,5 @@
 package group_chat.view;
 
-import account.view.UserListPanel;
 import account.model.UserItem;
 
 import javax.swing.*;

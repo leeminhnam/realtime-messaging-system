@@ -166,7 +166,7 @@ public class GroupChatController {
         if (groupId == 0 || content.trim().isEmpty()) {
             return;
         }
-        // Khớp giới hạn MAX_MESSAGE_LENGTH bên Server, báo lỗi sớm không cần gửi lên
+
         if (content.trim().length() > 2000) {
             showError("Tin nhắn tối đa 2000 ký tự!");
             return;
@@ -371,7 +371,6 @@ public class GroupChatController {
         String deletedBy = data.get("deletedBy").getAsString();
 
         if (groupId == chatView.getCurrentGroupId()) {
-            // Đóng trước để onGroupsReceived không báo thêm "Bạn không còn ở trong nhóm"
             chatView.showPlaceholder();
             if (membersDialog != null) {
                 membersDialog.setVisible(false);
